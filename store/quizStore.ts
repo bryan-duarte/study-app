@@ -2,13 +2,15 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { QuizQuestion } from "@/lib/transformers/question";
 import type { SessionQuestion, SessionStartResponse } from "@/types/quiz";
+import { fetchWithTimeout, isTimeoutError } from "@/lib/fetch";
 
 // Constants
 const INITIAL_QUESTION_INDEX = 0;
 const EMPTY_QUESTION_COUNT = 0;
 const DEFAULT_PAGE = 1;
 const DEFAULT_QUESTIONS_PER_PAGE = 10;
-const SESSION_QUESTIONS_COUNT = 25;
+const DEFAULT_SESSION_QUESTION_COUNT = 20;
+const DEFAULT_QUESTION_COUNT = 20;
 
 // Session Types
 interface SessionQuestionData {
@@ -65,6 +67,7 @@ interface QuizData {
 	totalUniqueQuestionsAnswered: number;
 	answeredQuestionIds: Set<string>;
 	session: SessionState;
+	selectedQuestionCount: number;
 }
 
 interface QuizComputed {
@@ -98,11 +101,12 @@ interface QuizActions {
 	loadProgress: () => Promise<void>;
 	enableAutoSync: () => void;
 	disableAutoSync: () => void;
-	startSession: (userId?: string) => Promise<SessionStartResponse | null>;
+	startSession: (userId?: string, questionCount?: number) => Promise<SessionStartResponse | null>;
 	recordSessionAnswer: (questionId: string, selectedOptionId: string) => Promise<void>;
 	getSessionMetrics: () => SessionMetrics | null;
 	handleSessionComplete: () => Promise<void>;
 	checkExhaustionStatus: () => Promise<void>;
+	setQuestionCount: (count: number) => void;
 }
 
 type QuizState = QuizData & QuizComputed & QuizActions;
@@ -246,6 +250,7 @@ export const useQuizStore = create<QuizState>()(
 				sessionStartTime: null,
 				currentSessionData: null,
 			},
+			selectedQuestionCount: DEFAULT_QUESTION_COUNT,
 
 			// Computed properties
 			get currentQuestion(): QuizQuestion | null {
@@ -307,7 +312,7 @@ export const useQuizStore = create<QuizState>()(
 
 			get sessionRemaining(): number {
 				const { session } = get();
-				const total = session.currentSessionData?.questions.length ?? SESSION_QUESTIONS_COUNT;
+				const total = session.currentSessionData?.questions.length ?? DEFAULT_SESSION_QUESTION_COUNT;
 				const answered = get().sessionProgress;
 				return total - answered;
 			},
@@ -320,7 +325,7 @@ export const useQuizStore = create<QuizState>()(
 					return answered >= session.currentSessionData.questions.length;
 				}
 				// Fallback to local count
-				return confirmedAnswers.size >= SESSION_QUESTIONS_COUNT;
+				return confirmedAnswers.size >= DEFAULT_SESSION_QUESTION_COUNT;
 			},
 
 			// Actions
@@ -412,8 +417,11 @@ export const useQuizStore = create<QuizState>()(
 						correctOptionIndices.includes(idx),
 					);
 					isCorrect = allCorrectSelected && noIncorrectSelected && selectedIndices.length > 0;
-					// For multi-select, we use a composite ID
-					selectedOptionId = selectedIndices.join("-");
+					// For multi-select, collect the actual option UUIDs
+					selectedOptionId = selectedIndices
+						.map((idx) => question.options[idx]?.id)
+						.filter((id): id is string => Boolean(id))
+						.join("-");
 				} else {
 					const optionIndex =
 						typeof selectedOption === "number" ? selectedOption : selectedOption[0];
@@ -427,7 +435,7 @@ export const useQuizStore = create<QuizState>()(
 				set({ confirmedAnswers: newConfirmedAnswers, isSubmitting: false });
 
 				// Record session answer if session is active and we have a valid option ID
-				if (session.sessionId && selectedOptionId && !isMultiSelect) {
+				if (session.sessionId && selectedOptionId) {
 					await get().recordSessionAnswer(question.id, selectedOptionId);
 				}
 			},
@@ -500,8 +508,9 @@ export const useQuizStore = create<QuizState>()(
 			loadQuestionsPage: async (page: number, limit?: number) => {
 				try {
 					const questionsPerPage = limit ?? get().pagination.questionsPerPage;
-					const response = await fetch(
+					const response = await fetchWithTimeout(
 						`/api/questions?page=${page}&limit=${questionsPerPage}`,
+						{ timeout: 15000 },
 					);
 
 					if (!response.ok) {
@@ -523,7 +532,11 @@ export const useQuizStore = create<QuizState>()(
 						},
 					});
 				} catch (error) {
-					console.error("Failed to load questions page:", error);
+					if (isTimeoutError(error)) {
+						console.error("Questions request timed out");
+					} else {
+						console.error("Failed to load questions page:", error);
+					}
 					throw error;
 				}
 			},
@@ -573,7 +586,7 @@ export const useQuizStore = create<QuizState>()(
 
 				try {
 					const state = useQuizStore.getState();
-					const response = await fetch("/api/quiz/progress", {
+					const response = await fetchWithTimeout("/api/quiz/progress", {
 						method: "POST",
 						headers: { "Content-Type": "application/json" },
 						body: JSON.stringify({
@@ -639,12 +652,13 @@ export const useQuizStore = create<QuizState>()(
 			},
 
 			// Session actions
-			startSession: async (userId?: string) => {
+			startSession: async (userId?: string, questionCount?: number) => {
 				try {
-					const response = await fetch("/api/quiz/session/start", {
+					const count = questionCount ?? get().selectedQuestionCount;
+					const response = await fetchWithTimeout("/api/quiz/session/start", {
 						method: "POST",
 						headers: { "Content-Type": "application/json" },
-						body: JSON.stringify({ user_id: userId }),
+						body: JSON.stringify({ user_id: userId, question_count: count }),
 					});
 
 					if (!response.ok) {
@@ -675,7 +689,7 @@ export const useQuizStore = create<QuizState>()(
 				if (!session.sessionId) return;
 
 				try {
-					const response = await fetch(`/api/quiz/session/${session.sessionId}/answer`, {
+					const response = await fetchWithTimeout(`/api/quiz/session/${session.sessionId}/answer`, {
 						method: "POST",
 						headers: { "Content-Type": "application/json" },
 						body: JSON.stringify({
@@ -698,6 +712,14 @@ export const useQuizStore = create<QuizState>()(
 								: q
 						);
 
+						// Create a new SessionStartResponse object to ensure proper state change detection
+						// This is critical for triggering computed property recalculation in Zustand
+						const updatedSessionData: SessionStartResponse = {
+							sessionId: session.currentSessionData.sessionId,
+							questions: updatedQuestions,
+							totalAvailableQuestions: session.currentSessionData.totalAvailableQuestions,
+						};
+
 						set({
 							session: {
 								...session,
@@ -710,10 +732,7 @@ export const useQuizStore = create<QuizState>()(
 										}],
 									]),
 								),
-								currentSessionData: {
-									...session.currentSessionData,
-									questions: updatedQuestions,
-								},
+								currentSessionData: updatedSessionData,
 							},
 						});
 					}
@@ -738,7 +757,7 @@ export const useQuizStore = create<QuizState>()(
 
 				try {
 					// Fetch updated session details
-					const response = await fetch(`/api/quiz/session/${session.sessionId}`);
+					const response = await fetchWithTimeout(`/api/quiz/session/${session.sessionId}`, { timeout: 10000 });
 
 					if (!response.ok) {
 						throw new Error(`Failed to get session details: ${response.statusText}`);
@@ -776,7 +795,7 @@ export const useQuizStore = create<QuizState>()(
 
 				try {
 					// Use the session start API to check exhaustion
-					const response = await fetch("/api/quiz/session/start", {
+					const response = await fetchWithTimeout("/api/quiz/session/start", {
 						method: "POST",
 						headers: { "Content-Type": "application/json" },
 						body: JSON.stringify({ user_id: undefined }),
@@ -799,6 +818,15 @@ export const useQuizStore = create<QuizState>()(
 					console.error("Failed to check exhaustion status:", error);
 				}
 			},
+
+			setQuestionCount: (count: number) => {
+				const validCounts = [10, 20, 30];
+				if (!validCounts.includes(count)) {
+					console.warn(`Invalid question count: ${count}. Must be one of ${validCounts.join(", ")}`);
+					return;
+				}
+				set({ selectedQuestionCount: count });
+			},
 		}),
 		{
 			name: "quiz-storage",
@@ -816,6 +844,7 @@ export const useQuizStore = create<QuizState>()(
 				sessionsCompleted: state.sessionsCompleted,
 				totalUniqueQuestionsAnswered: state.totalUniqueQuestionsAnswered,
 				answeredQuestionIds: Array.from(state.answeredQuestionIds),
+				selectedQuestionCount: state.selectedQuestionCount,
 			}),
 			onRehydrateStorage: () => (state) => {
 				if (!state) return;
@@ -845,6 +874,7 @@ export const useQuizStore = create<QuizState>()(
 				state.answeredQuestionIds = new Set(
 					state.answeredQuestionIds as unknown as string[],
 				);
+				state.selectedQuestionCount = state.selectedQuestionCount ?? DEFAULT_QUESTION_COUNT;
 				state.session = {
 					sessionId: null,
 					sessionQuestions: new Map(),

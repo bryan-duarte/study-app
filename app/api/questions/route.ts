@@ -6,6 +6,7 @@
 import { NextResponse } from "next/server";
 import { createSupabaseClient } from "@/lib/supabase";
 import { transformQuestion } from "@/lib/transformers/question";
+import { handleApiError } from "@/lib/api-error";
 
 const DEFAULT_PAGE = 1;
 const DEFAULT_LIMIT = 10;
@@ -21,7 +22,7 @@ export async function GET(request: Request) {
 		const limit = parseInt(searchParams.get("limit") || String(DEFAULT_LIMIT));
 
 		// Validate pagination parameters
-		const isInvalidPage = page < 1;
+		const isInvalidPage = isNaN(page) || page < 1;
 		if (isInvalidPage) {
 			return NextResponse.json({ error: "Page must be >= 1" }, { status: 400 });
 		}
@@ -79,14 +80,7 @@ export async function GET(request: Request) {
 			},
 		});
 	} catch (error) {
-		console.error("Failed to fetch questions:", error);
-
-		return NextResponse.json(
-			{
-				error: "Failed to load questions",
-				message: error instanceof Error ? error.message : "Unknown error",
-			},
-			{ status: 500 },
-		);
+		const apiError = handleApiError(error, "questions");
+		return NextResponse.json(apiError, { status: 500 });
 	}
 }

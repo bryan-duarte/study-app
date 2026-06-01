@@ -9,10 +9,10 @@ interface FeedbackCardProps {
 }
 
 export default function FeedbackCard({ question }: FeedbackCardProps) {
-	const currentSelectedAnswer = useQuizStore((state) => {
-		const idx = state.currentIndex;
-		return state.answers.get(idx);
-	});
+	// Get the current index and session data
+	const currentIndex = useQuizStore((state) => state.currentIndex);
+	const sessionQuestionData = useQuizStore((state) => state.session.currentSessionData?.questions[currentIndex]);
+	const currentSelectedAnswer = useQuizStore((state) => state.answers.get(currentIndex));
 
 	const isMultiSelect = question.type === "multi-option";
 
@@ -20,32 +20,58 @@ export default function FeedbackCard({ question }: FeedbackCardProps) {
 	let selectedOptions: typeof question.options = [];
 	let correctOptions: typeof question.options = [];
 
-	if (isMultiSelect) {
-		const selectedIndices = Array.isArray(currentSelectedAnswer)
-			? currentSelectedAnswer
-			: [];
-		selectedOptions = selectedIndices.map(
-			(i) => question.options[i] ?? null,
-		).filter(Boolean);
-		correctOptions = question.options.filter((opt) => opt.isCorrect);
+	// Use server-validated isCorrect when available, otherwise compute locally
+	if (sessionQuestionData?.answeredAt && sessionQuestionData.isCorrect !== undefined) {
+		// Server has validated this answer - use the server's isCorrect value
+		isCorrect = sessionQuestionData.isCorrect;
 
-		const allCorrectSelected = correctOptions.every((correctOpt) =>
-			selectedOptions.some((selected) => selected?.description === correctOpt.description),
-		);
-		const noIncorrectSelected = selectedOptions.every((selected) =>
-			correctOptions.some((correct) => correct.description === selected?.description),
-		);
-		isCorrect = allCorrectSelected && noIncorrectSelected && selectedOptions.length > 0;
-	} else {
-		const hasValidSelection =
-			typeof currentSelectedAnswer === "number" &&
-			currentSelectedAnswer >= 0;
-		const selectedOption = hasValidSelection
-			? (question.options[currentSelectedAnswer] ?? null)
-			: null;
-		isCorrect = selectedOption?.isCorrect ?? false;
-		selectedOptions = selectedOption ? [selectedOption] : [];
+		// Still need to determine which options were selected for display
+		if (isMultiSelect) {
+			const selectedIndices = Array.isArray(currentSelectedAnswer)
+				? currentSelectedAnswer
+				: [];
+			selectedOptions = selectedIndices.map(
+				(i) => question.options[i] ?? null,
+			).filter(Boolean);
+		} else {
+			const hasValidSelection =
+				typeof currentSelectedAnswer === "number" &&
+				currentSelectedAnswer >= 0;
+			const selectedOption = hasValidSelection
+				? (question.options[currentSelectedAnswer] ?? null)
+				: null;
+			selectedOptions = selectedOption ? [selectedOption] : [];
+		}
 		correctOptions = question.options.filter((opt) => opt.isCorrect);
+	} else {
+		// No server validation yet - compute locally (fallback)
+		if (isMultiSelect) {
+			const selectedIndices = Array.isArray(currentSelectedAnswer)
+				? currentSelectedAnswer
+				: [];
+			selectedOptions = selectedIndices.map(
+				(i) => question.options[i] ?? null,
+			).filter(Boolean);
+			correctOptions = question.options.filter((opt) => opt.isCorrect);
+
+			const allCorrectSelected = correctOptions.every((correctOpt) =>
+				selectedOptions.some((selected) => selected?.description === correctOpt.description),
+			);
+			const noIncorrectSelected = selectedOptions.every((selected) =>
+				correctOptions.some((correct) => correct.description === selected?.description),
+			);
+			isCorrect = allCorrectSelected && noIncorrectSelected && selectedOptions.length > 0;
+		} else {
+			const hasValidSelection =
+				typeof currentSelectedAnswer === "number" &&
+				currentSelectedAnswer >= 0;
+			const selectedOption = hasValidSelection
+				? (question.options[currentSelectedAnswer] ?? null)
+				: null;
+			isCorrect = selectedOption?.isCorrect ?? false;
+			selectedOptions = selectedOption ? [selectedOption] : [];
+			correctOptions = question.options.filter((opt) => opt.isCorrect);
+		}
 	}
 
 	const feedbackTitle = isCorrect ? "Correct!" : "Incorrect";

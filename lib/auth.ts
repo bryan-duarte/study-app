@@ -29,9 +29,9 @@ export async function createAuthClient() {
 						value,
 						maxAge: COOKIE_MAX_AGE,
 						path: "/",
-						secure: process.env.NODE_ENV === "production",
+						secure: true,
 						httpOnly: true,
-						sameSite: "lax" as const,
+						sameSite: "strict" as const,
 					});
 				},
 				removeItem: (key: string) => {

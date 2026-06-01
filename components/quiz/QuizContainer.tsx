@@ -23,6 +23,8 @@ export default function QuizContainer() {
 	const nextQuestion = useQuizStore((state) => state.nextQuestion);
 	const previousQuestion = useQuizStore((state) => state.previousQuestion);
 	const isSubmitting = useQuizStore((state) => state.isSubmitting);
+	// Subscribe to session.currentSessionData to ensure reactivity when answeredAt changes
+	const currentSessionData = useQuizStore((state) => state.session.currentSessionData);
 	const sessionProgress = useQuizStore((state) => state.sessionProgress);
 	const sessionRemaining = useQuizStore((state) => state.sessionRemaining);
 	const isSessionComplete = useQuizStore((state) => state.isSessionComplete);
@@ -195,10 +197,15 @@ export default function QuizContainer() {
 		);
 	}
 
-	const sessionTotal = session.currentSessionData?.questions.length ?? SESSION_QUESTIONS_COUNT;
+	const sessionTotal = currentSessionData?.questions.length ?? SESSION_QUESTIONS_COUNT;
 
 	return (
 		<div className="w-full max-w-3xl mx-auto p-6 pb-24 md:pb-6">
+			{/* Live region for announcing answer feedback */}
+			<div aria-live="polite" aria-atomic="true" className="sr-only">
+				{isCurrentConfirmed ? "Answer submitted" : ""}
+			</div>
+
 			<ProgressBar
 				current={currentIndex + 1}
 				total={totalQuestions}

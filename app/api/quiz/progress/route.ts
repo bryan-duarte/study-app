@@ -97,7 +97,10 @@ export async function POST(request: NextRequest) {
         .eq("question_id", answer.questionId);
 
       if (updateError) {
-        console.error("Failed to update session question:", updateError);
+        return NextResponse.json(
+          { error: "Failed to save answer", detail: updateError.message },
+          { status: 500 }
+        );
       }
     }
 
@@ -153,7 +156,8 @@ export async function POST(request: NextRequest) {
 }
 
 /**
- * GET: Fetch user's quiz progress (legacy support)
+ * GET: Fetch user's quiz progress from session-based architecture
+ * Returns progress from active session or most recent completed session
  */
 export async function GET(request: NextRequest) {
   try {
@@ -169,32 +173,64 @@ export async function GET(request: NextRequest) {
 
     const supabase = createSupabaseClient();
 
-    const { data: progress, error } = await supabase
-      .from("user_progress")
+    // Get user's active session or most recent completed session
+    const { data: session, error: sessionError } = await supabase
+      .from("quiz_sessions")
       .select("*")
-      .eq("user_id" as any, user.id as any)
-      .single();
+      .eq("user_id", user.id)
+      .order("started_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
 
-    if (error) {
-      if (error.code === "PGRST116") {
-        // No progress found, return default
-        return NextResponse.json({
-          answers: [],
-          confirmedAnswers: [],
-          currentIndex: 0,
-          isComplete: false,
-          answeredQuestionIds: [],
-        });
-      }
-      throw error;
+    if (sessionError || !session) {
+      // No session found, return default empty progress
+      return NextResponse.json({
+        answers: [],
+        confirmedAnswers: [],
+        currentIndex: 0,
+        isComplete: false,
+        answeredQuestionIds: [],
+      });
     }
 
+    // Get all questions for this session with their answer state
+    const { data: sessionQuestions, error: questionsError } = await supabase
+      .from("session_questions")
+      .select("question_id, selected_option_id, is_correct, answered_at")
+      .eq("session_id", session.id);
+
+    if (questionsError) {
+      throw questionsError;
+    }
+
+    // Build progress data from session questions
+    const answers: Array<{ questionId: string; selectedOptionId: string; isCorrect: boolean }> = [];
+    const confirmedAnswers: Array<{ questionId: string; selectedOptionId: string; isCorrect: boolean }> = [];
+    const answeredQuestionIds: string[] = [];
+
+    for (const sq of sessionQuestions || []) {
+      if (sq.answered_at && sq.selected_option_id) {
+        const answerData = {
+          questionId: sq.question_id,
+          selectedOptionId: sq.selected_option_id,
+          isCorrect: sq.is_correct || false,
+        };
+        answers.push(answerData);
+        confirmedAnswers.push(answerData);
+        answeredQuestionIds.push(sq.question_id);
+      }
+    }
+
+    // Calculate current index based on answered questions
+    const answeredCount = answeredQuestionIds.length;
+    const currentIndex = session.is_complete ? answeredCount : answeredCount;
+
     return NextResponse.json({
-      answers: (progress as any).answers,
-      confirmedAnswers: (progress as any).confirmed_answers,
-      currentIndex: (progress as any).current_index,
-      isComplete: (progress as any).is_complete,
-      answeredQuestionIds: (progress as any).answered_question_ids || [],
+      answers,
+      confirmedAnswers,
+      currentIndex,
+      isComplete: session.is_complete,
+      answeredQuestionIds,
     });
   } catch (error) {
     console.error("Failed to fetch progress:", error);
