@@ -45,6 +45,7 @@ CREATE TABLE IF NOT EXISTS user_progress (
 CREATE TABLE IF NOT EXISTS quiz_analytics (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  session_id UUID REFERENCES quiz_sessions(id) ON DELETE SET NULL,
   score INTEGER NOT NULL,
   total_questions INTEGER NOT NULL,
   correct_count INTEGER NOT NULL,
@@ -55,6 +56,7 @@ CREATE TABLE IF NOT EXISTS quiz_analytics (
 
 -- Performance indexes for analytics queries
 CREATE INDEX IF NOT EXISTS idx_analytics_user_id ON quiz_analytics(user_id);
+CREATE INDEX IF NOT EXISTS idx_analytics_session_id ON quiz_analytics(session_id);
 CREATE INDEX IF NOT EXISTS idx_analytics_completed_at ON quiz_analytics(completed_at DESC);
 
 -- Trigger function to update updated_at timestamp

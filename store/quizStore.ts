@@ -1,12 +1,42 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { QuizQuestion } from "@/lib/transformers/question";
+import type { SessionQuestion, SessionStartResponse } from "@/types/quiz";
 
 // Constants
 const INITIAL_QUESTION_INDEX = 0;
 const EMPTY_QUESTION_COUNT = 0;
 const DEFAULT_PAGE = 1;
 const DEFAULT_QUESTIONS_PER_PAGE = 10;
+const SESSION_QUESTIONS_COUNT = 25;
+
+// Session Types
+interface SessionQuestionData {
+	questionId: string;
+	isCorrect: boolean;
+	timeTaken?: number;
+	timestamp: number;
+}
+
+interface SessionMetrics {
+	sessionId: string;
+	questionsAnswered: number;
+	correctCount: number;
+	totalUniqueQuestionsAnswered: number;
+	startTime: number;
+	endTime?: number;
+	isComplete: boolean;
+}
+
+interface SessionState {
+	sessionId: string | null;
+	sessionQuestions: Map<string, SessionQuestionData>;
+	sessionMetrics: SessionMetrics | null;
+	questionPoolSize: number;
+	isQuestionExhausted: boolean;
+	sessionStartTime: number | null;
+	currentSessionData: SessionStartResponse | null;
+}
 
 interface PaginationState {
 	currentPage: number;
@@ -31,6 +61,10 @@ interface QuizData {
 	shuffledIndices: number[];
 	isShuffled: boolean;
 	isSubmitting: boolean;
+	sessionsCompleted: number;
+	totalUniqueQuestionsAnswered: number;
+	answeredQuestionIds: Set<string>;
+	session: SessionState;
 }
 
 interface QuizComputed {
@@ -42,11 +76,16 @@ interface QuizComputed {
 	totalQuestions: number;
 	answeredCount: number;
 	correctCount: number;
+	questionsRemaining: number;
+	sessionProgress: number;
+	sessionRemaining: number;
+	isSessionComplete: boolean;
 }
 
 interface QuizActions {
 	loadQuestions: (questions: QuizQuestion[]) => void;
 	loadQuestionsPage: (page: number, limit?: number) => Promise<void>;
+	loadSessionQuestions: (userId?: string) => Promise<void>;
 	selectOption: (optionIndex: number) => void;
 	toggleOption: (optionIndex: number) => void;
 	confirmAnswer: () => void;
@@ -59,6 +98,11 @@ interface QuizActions {
 	loadProgress: () => Promise<void>;
 	enableAutoSync: () => void;
 	disableAutoSync: () => void;
+	startSession: (userId?: string) => Promise<SessionStartResponse | null>;
+	recordSessionAnswer: (questionId: string, selectedOptionId: string) => Promise<void>;
+	getSessionMetrics: () => SessionMetrics | null;
+	handleSessionComplete: () => Promise<void>;
+	checkExhaustionStatus: () => Promise<void>;
 }
 
 type QuizState = QuizData & QuizComputed & QuizActions;
@@ -190,6 +234,18 @@ export const useQuizStore = create<QuizState>()(
 			shuffledIndices: [],
 			isShuffled: false,
 			isSubmitting: false,
+			sessionsCompleted: 0,
+			totalUniqueQuestionsAnswered: 0,
+			answeredQuestionIds: new Set(),
+			session: {
+				sessionId: null,
+				sessionQuestions: new Map(),
+				sessionMetrics: null,
+				questionPoolSize: 0,
+				isQuestionExhausted: false,
+				sessionStartTime: null,
+				currentSessionData: null,
+			},
 
 			// Computed properties
 			get currentQuestion(): QuizQuestion | null {
@@ -229,6 +285,42 @@ export const useQuizStore = create<QuizState>()(
 			get correctCount(): number {
 				const { confirmedAnswers, questions } = get();
 				return computeCorrectCount(confirmedAnswers, questions);
+			},
+
+			get questionsRemaining(): number {
+				const { answeredQuestionIds, questions } = get();
+				const newQuestions = questions.filter(
+					(q) => !answeredQuestionIds.has(q.id),
+				).length;
+				return newQuestions;
+			},
+
+			get sessionProgress(): number {
+				const { session, confirmedAnswers } = get();
+				// If we have active session data, use that
+				if (session.currentSessionData) {
+					return session.currentSessionData.questions.filter((q) => q.answeredAt).length;
+				}
+				// Otherwise fallback to local confirmed answers
+				return confirmedAnswers.size;
+			},
+
+			get sessionRemaining(): number {
+				const { session } = get();
+				const total = session.currentSessionData?.questions.length ?? SESSION_QUESTIONS_COUNT;
+				const answered = get().sessionProgress;
+				return total - answered;
+			},
+
+			get isSessionComplete(): boolean {
+				const { session, confirmedAnswers } = get();
+				// Check if session is marked complete in backend
+				if (session.currentSessionData) {
+					const answered = session.currentSessionData.questions.filter((q) => q.answeredAt).length;
+					return answered >= session.currentSessionData.questions.length;
+				}
+				// Fallback to local count
+				return confirmedAnswers.size >= SESSION_QUESTIONS_COUNT;
 			},
 
 			// Actions
@@ -289,22 +381,55 @@ export const useQuizStore = create<QuizState>()(
 			},
 
 			confirmAnswer: async () => {
-				const { currentIndex, answers, confirmedAnswers } = get();
+				const { currentIndex, answers, confirmedAnswers, questions, session } = get();
 				const selectedOption = answers.get(currentIndex);
+				const question = questions[currentIndex];
 
 				const hasSelectedOption = selectedOption !== undefined;
-				if (!hasSelectedOption) {
+				if (!hasSelectedOption || !question) {
 					return;
 				}
 
 				set({ isSubmitting: true });
 
-				// Simulate validation delay for better UX
-				await new Promise((resolve) => setTimeout(resolve, 300));
+				// Calculate if answer is correct
+				const isMultiSelect = question.type === "multi-option";
+				const correctOptionIndices = question.options
+					.map((opt, idx) => (opt.isCorrect ? idx : -1))
+					.filter((idx) => idx !== -1);
+
+				let isCorrect = false;
+				let selectedOptionId: string | null = null;
+
+				if (isMultiSelect) {
+					const selectedIndices = Array.isArray(selectedOption)
+						? selectedOption
+						: [selectedOption];
+					const allCorrectSelected = correctOptionIndices.every((idx) =>
+						selectedIndices.includes(idx),
+					);
+					const noIncorrectSelected = selectedIndices.every((idx) =>
+						correctOptionIndices.includes(idx),
+					);
+					isCorrect = allCorrectSelected && noIncorrectSelected && selectedIndices.length > 0;
+					// For multi-select, we use a composite ID
+					selectedOptionId = selectedIndices.join("-");
+				} else {
+					const optionIndex =
+						typeof selectedOption === "number" ? selectedOption : selectedOption[0];
+					const selectedOptionValue = question.options[optionIndex];
+					isCorrect = selectedOptionValue?.isCorrect ?? false;
+					selectedOptionId = selectedOptionValue?.id ?? null;
+				}
 
 				const newConfirmedAnswers = new Map(confirmedAnswers);
 				newConfirmedAnswers.set(currentIndex, selectedOption);
 				set({ confirmedAnswers: newConfirmedAnswers, isSubmitting: false });
+
+				// Record session answer if session is active and we have a valid option ID
+				if (session.sessionId && selectedOptionId && !isMultiSelect) {
+					await get().recordSessionAnswer(question.id, selectedOptionId);
+				}
 			},
 
 			nextQuestion: () => {
@@ -325,11 +450,40 @@ export const useQuizStore = create<QuizState>()(
 				}
 			},
 
-			resetQuiz: () => {
+			resetQuiz: async () => {
+				const { questions, confirmedAnswers, answeredQuestionIds, sessionsCompleted, totalUniqueQuestionsAnswered, session } = get();
+
+				// Track newly answered question IDs for this session
+				const newAnsweredIds = new Set(answeredQuestionIds);
+				let uniqueCount = totalUniqueQuestionsAnswered;
+
+				for (const [questionIndex] of confirmedAnswers.entries()) {
+					const question = questions[questionIndex];
+					if (question && !newAnsweredIds.has(question.id)) {
+						newAnsweredIds.add(question.id);
+						uniqueCount++;
+					}
+				}
+
+				// Complete session if it was active
+				if (session.sessionId && session.sessionQuestions.size > 0) {
+					await get().handleSessionComplete();
+				}
+
 				set({
 					answers: new Map(),
 					confirmedAnswers: new Map(),
 					currentIndex: INITIAL_QUESTION_INDEX,
+					sessionsCompleted: sessionsCompleted + 1,
+					totalUniqueQuestionsAnswered: uniqueCount,
+					answeredQuestionIds: newAnsweredIds,
+					session: {
+						...session,
+						sessionId: null,
+						sessionQuestions: new Map(),
+						sessionMetrics: null,
+						currentSessionData: null,
+					},
 				});
 			},
 
@@ -370,6 +524,43 @@ export const useQuizStore = create<QuizState>()(
 					});
 				} catch (error) {
 					console.error("Failed to load questions page:", error);
+					throw error;
+				}
+			},
+
+			loadSessionQuestions: async (userId?: string) => {
+				try {
+					const sessionData = await get().startSession(userId);
+					if (!sessionData) {
+						throw new Error("Failed to start session");
+					}
+
+					// Transform SessionQuestion[] to QuizQuestion[]
+					const transformedQuestions = sessionData.questions.map((sq) => ({
+						id: sq.question.id,
+						type: sq.question.type,
+						title: sq.question.title,
+						options: sq.question.options.map((opt) => ({
+							id: opt.id,
+							description: opt.description,
+							isCorrect: opt.is_correct,
+							reasoning: opt.reasoning,
+						})),
+					}));
+
+					set({
+						questions: transformedQuestions,
+						session: {
+							...get().session,
+							questionPoolSize: sessionData.totalAvailableQuestions,
+							isQuestionExhausted: sessionData.questions.length === 0,
+							currentSessionData: sessionData,
+						},
+					});
+
+					// Don't shuffle - the session API already returns shuffled questions
+				} catch (error) {
+					console.error("Failed to load session questions:", error);
 					throw error;
 				}
 			},
@@ -446,6 +637,168 @@ export const useQuizStore = create<QuizState>()(
 			disableAutoSync: () => {
 				set({ sync: { ...get().sync, autoSyncEnabled: false } });
 			},
+
+			// Session actions
+			startSession: async (userId?: string) => {
+				try {
+					const response = await fetch("/api/quiz/session/start", {
+						method: "POST",
+						headers: { "Content-Type": "application/json" },
+						body: JSON.stringify({ user_id: userId }),
+					});
+
+					if (!response.ok) {
+						throw new Error(`Failed to start session: ${response.statusText}`);
+					}
+
+					const data = await response.json() as SessionStartResponse;
+
+					set({
+						session: {
+							...get().session,
+							sessionId: data.sessionId,
+							sessionStartTime: Date.now(),
+							sessionQuestions: new Map(),
+							currentSessionData: data,
+						},
+					});
+
+					return data;
+				} catch (error) {
+					console.error("Failed to start session:", error);
+					return null;
+				}
+			},
+
+			recordSessionAnswer: async (questionId: string, selectedOptionId: string) => {
+				const { session } = get();
+				if (!session.sessionId) return;
+
+				try {
+					const response = await fetch(`/api/quiz/session/${session.sessionId}/answer`, {
+						method: "POST",
+						headers: { "Content-Type": "application/json" },
+						body: JSON.stringify({
+							questionId,
+							selectedOptionId,
+						}),
+					});
+
+					if (!response.ok) {
+						throw new Error(`Failed to record answer: ${response.statusText}`);
+					}
+
+					const data = await response.json();
+
+					// Update local session state with response
+					if (session.currentSessionData) {
+						const updatedQuestions = session.currentSessionData.questions.map((q) =>
+							q.questionId === questionId
+								? { ...q, selectedOptionId, isCorrect: data.isCorrect, answeredAt: new Date().toISOString() }
+								: q
+						);
+
+						set({
+							session: {
+								...session,
+								sessionQuestions: new Map(
+									Array.from(session.sessionQuestions.entries()).concat([
+										[questionId, {
+											questionId,
+											isCorrect: data.isCorrect,
+											timestamp: Date.now(),
+										}],
+									]),
+								),
+								currentSessionData: {
+									...session.currentSessionData,
+									questions: updatedQuestions,
+								},
+							},
+						});
+					}
+
+					// Check if session is complete
+					if (data.sessionComplete) {
+						await get().handleSessionComplete();
+					}
+				} catch (error) {
+					console.error("Failed to record session answer:", error);
+				}
+			},
+
+			getSessionMetrics: () => {
+				const { session } = get();
+				return session.sessionMetrics;
+			},
+
+			handleSessionComplete: async () => {
+				const { session, correctCount, totalUniqueQuestionsAnswered } = get();
+				if (!session.sessionId) return;
+
+				try {
+					// Fetch updated session details
+					const response = await fetch(`/api/quiz/session/${session.sessionId}`);
+
+					if (!response.ok) {
+						throw new Error(`Failed to get session details: ${response.statusText}`);
+					}
+
+					const data = await response.json();
+
+					const metrics: SessionMetrics = {
+						sessionId: session.sessionId,
+						questionsAnswered: data.answeredCount,
+						correctCount: data.questions.filter((q: SessionQuestion) => q.isCorrect).length,
+						totalUniqueQuestionsAnswered,
+						startTime: session.sessionStartTime ?? Date.now(),
+						endTime: Date.now(),
+						isComplete: data.isComplete,
+					};
+
+					set({
+						session: {
+							...get().session,
+							sessionMetrics: metrics,
+							currentSessionData: {
+								...session.currentSessionData!,
+								questions: data.questions,
+							},
+						},
+					});
+				} catch (error) {
+					console.error("Failed to complete session:", error);
+				}
+			},
+
+			checkExhaustionStatus: async () => {
+				const { answeredQuestionIds } = get();
+
+				try {
+					// Use the session start API to check exhaustion
+					const response = await fetch("/api/quiz/session/start", {
+						method: "POST",
+						headers: { "Content-Type": "application/json" },
+						body: JSON.stringify({ user_id: undefined }),
+					});
+
+					if (!response.ok) {
+						throw new Error(`Failed to check exhaustion: ${response.statusText}`);
+					}
+
+					const data = await response.json() as SessionStartResponse;
+
+					set({
+						session: {
+							...get().session,
+							questionPoolSize: data.totalAvailableQuestions,
+							isQuestionExhausted: data.questions.length === 0,
+						},
+					});
+				} catch (error) {
+					console.error("Failed to check exhaustion status:", error);
+				}
+			},
 		}),
 		{
 			name: "quiz-storage",
@@ -460,6 +813,9 @@ export const useQuizStore = create<QuizState>()(
 				},
 				shuffledIndices: state.shuffledIndices,
 				isShuffled: state.isShuffled,
+				sessionsCompleted: state.sessionsCompleted,
+				totalUniqueQuestionsAnswered: state.totalUniqueQuestionsAnswered,
+				answeredQuestionIds: Array.from(state.answeredQuestionIds),
 			}),
 			onRehydrateStorage: () => (state) => {
 				if (!state) return;
@@ -484,6 +840,20 @@ export const useQuizStore = create<QuizState>()(
 				};
 				state.shuffledIndices = state.shuffledIndices ?? [];
 				state.isShuffled = state.isShuffled ?? false;
+				state.sessionsCompleted = state.sessionsCompleted ?? 0;
+				state.totalUniqueQuestionsAnswered = state.totalUniqueQuestionsAnswered ?? 0;
+				state.answeredQuestionIds = new Set(
+					state.answeredQuestionIds as unknown as string[],
+				);
+				state.session = {
+					sessionId: null,
+					sessionQuestions: new Map(),
+					sessionMetrics: null,
+					questionPoolSize: 0,
+					isQuestionExhausted: false,
+					sessionStartTime: null,
+					currentSessionData: null,
+				};
 			},
 		},
 	),

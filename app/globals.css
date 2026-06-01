@@ -1,5 +1,65 @@
 @import "tailwindcss";
 
+/* Prose styles for markdown rendering */
+.prose {
+  @apply text-body text-porcelain;
+  max-width: none;
+}
+
+.prose p {
+  @apply text-body text-porcelain;
+  margin-bottom: 1em;
+  line-height: 1.6;
+}
+
+.prose h1,
+.prose h2,
+.prose h3,
+.prose h4 {
+  @apply text-question text-porcelain font-w510;
+  margin-top: 1.5em;
+  margin-bottom: 0.5em;
+  line-height: 1.3;
+}
+
+.prose strong {
+  @apply font-w510 text-porcelain;
+}
+
+.prose code {
+  @apply text-body text-porcelain bg-deep-slate px-1 py-0.5 rounded;
+  font-family: var(--font-berkeley-mono);
+}
+
+.prose a {
+  @apply text-cyan-spark underline;
+}
+
+.prose ul,
+.prose ol {
+  @apply text-body text-porcelain;
+  margin-left: 1.5em;
+  margin-bottom: 1em;
+}
+
+.prose li {
+  margin-bottom: 0.25em;
+}
+
+.prose blockquote {
+  @apply text-body text-light-steel border-l-2 border-charcoal-grey pl-4 py-2;
+  margin: 1em 0;
+}
+
+.prose pre {
+  @apply bg-deep-slate p-4 rounded-cards overflow-x-auto;
+  margin: 1em 0;
+}
+
+.prose pre code {
+  @apply bg-transparent p-0;
+}
+
 @theme {
   /* Linear Colors */
   --color-pitch-black: #08090a;

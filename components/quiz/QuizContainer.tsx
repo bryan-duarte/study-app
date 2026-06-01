@@ -1,51 +1,32 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import type { QuizQuestion } from "@/lib/transformers/question";
 import { cn } from "@/lib/utils/cn";
-import { fetchWithRetry } from "@/lib/utils/retry";
 import { useQuizStore } from "@/store/quizStore";
 import FeedbackCard from "./FeedbackCard";
 import OptionsList from "./OptionsList";
 import ProgressBar from "./ProgressBar";
 import QuestionCard from "./QuestionCard";
 
-const QUESTIONS_API_URL = "/api/questions";
-
-interface PaginatedQuestionsResponse {
-	questions: Array<{
-		id: string;
-		type: "single-option" | "multi-option";
-		title: string;
-		options: Array<{
-			id: string;
-			description: string;
-			isCorrect: boolean;
-			reasoning: string;
-		}>;
-	}>;
-	pagination: {
-		page: number;
-		limit: number;
-		total: number;
-		totalPages: number;
-		hasNext: boolean;
-		hasPrev: boolean;
-	};
-}
+const SESSION_QUESTIONS_COUNT = 25;
 
 export default function QuizContainer() {
+	const router = useRouter();
 	const questions = useQuizStore((state) => state.questions);
 	const confirmedAnswers = useQuizStore((state) => state.confirmedAnswers);
 	const currentIndex = useQuizStore((state) => state.currentIndex);
-	const loadQuestions = useQuizStore((state) => state.loadQuestions);
+	const loadSessionQuestions = useQuizStore((state) => state.loadSessionQuestions);
 	const answers = useQuizStore((state) => state.answers);
-	const shuffleQuestions = useQuizStore((state) => state.shuffleQuestions);
-	const isShuffled = useQuizStore((state) => state.isShuffled);
 	const confirmAnswer = useQuizStore((state) => state.confirmAnswer);
 	const nextQuestion = useQuizStore((state) => state.nextQuestion);
 	const previousQuestion = useQuizStore((state) => state.previousQuestion);
 	const isSubmitting = useQuizStore((state) => state.isSubmitting);
+	const sessionProgress = useQuizStore((state) => state.sessionProgress);
+	const sessionRemaining = useQuizStore((state) => state.sessionRemaining);
+	const isSessionComplete = useQuizStore((state) => state.isSessionComplete);
+	const session = useQuizStore((state) => state.session);
 
 	const [isLoading, setIsLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
@@ -60,30 +41,16 @@ export default function QuizContainer() {
 	const hasNextQuestion = currentIndex < totalQuestions - 1;
 	const hasPreviousQuestion = currentIndex > 0;
 
+	// Initialize quiz session and load questions
 	useEffect(() => {
 		const initializeQuiz = async () => {
 			setIsLoading(true);
 			setError(null);
 
 			try {
-				const response = await fetchWithRetry(async () => {
-					const res = await fetch(QUESTIONS_API_URL);
-					if (!res.ok) {
-						throw new Error(`Failed to load: ${res.statusText}`);
-					}
-					return res;
-				});
-
-				const data: PaginatedQuestionsResponse = await response.json();
-
-				// API returns camelCase format matching our shared QuizQuestion type
-				loadQuestions(data.questions as QuizQuestion[]);
-
-				// Shuffle questions if not already shuffled
-				if (!isShuffled && !hasInitializedRef.current) {
-					shuffleQuestions();
-					hasInitializedRef.current = true;
-				}
+				// Load session questions (this will call startSession internally)
+				// Pass undefined for userId to let the backend handle guest users
+				await loadSessionQuestions(undefined);
 			} catch (err) {
 				const errorMessage =
 					err instanceof Error ? err.message : "Failed to load quiz questions";
@@ -94,8 +61,18 @@ export default function QuizContainer() {
 			}
 		};
 
-		initializeQuiz();
-	}, [loadQuestions, isShuffled, shuffleQuestions]);
+		if (!hasInitializedRef.current) {
+			initializeQuiz();
+			hasInitializedRef.current = true;
+		}
+	}, [loadSessionQuestions]);
+
+	// Redirect to results when session is complete
+	useEffect(() => {
+		if (isSessionComplete && isLoading === false) {
+			router.push("/quiz/results");
+		}
+	}, [isSessionComplete, isLoading, router]);
 
 	// Keyboard navigation
 	useEffect(() => {
@@ -174,6 +151,26 @@ export default function QuizContainer() {
 
 	const hasNoQuestions = totalQuestions === 0;
 	if (hasNoQuestions) {
+		// Check if questions are exhausted
+		if (session.isQuestionExhausted) {
+			return (
+				<div
+					className="flex items-center justify-center min-h-[400px]"
+					role="status"
+					aria-live="polite"
+				>
+					<div className="text-center">
+						<p className="text-heading font-w590 text-warning-red mb-2">
+							Questions Exhausted
+						</p>
+						<p className="text-body text-storm-cloud">
+							You've answered all available questions. Check back later for new content!
+						</p>
+					</div>
+				</div>
+			);
+		}
+
 		return (
 			<div
 				className="flex items-center justify-center min-h-[400px]"
@@ -198,12 +195,16 @@ export default function QuizContainer() {
 		);
 	}
 
+	const sessionTotal = session.currentSessionData?.questions.length ?? SESSION_QUESTIONS_COUNT;
+
 	return (
 		<div className="w-full max-w-3xl mx-auto p-6 pb-24 md:pb-6">
 			<ProgressBar
 				current={currentIndex + 1}
 				total={totalQuestions}
 				progress={progress}
+				sessionProgress={sessionProgress}
+				sessionTotal={sessionTotal}
 			/>
 
 			<div className="mt-8 space-y-6">
@@ -257,6 +258,17 @@ export default function QuizContainer() {
 							disabled={isSubmitting}
 						>
 							Next Question
+						</button>
+					)}
+
+					{isCurrentConfirmed && !hasNextQuestion && (
+						<button
+							onClick={() => router.push("/quiz/results")}
+							type="button"
+							className="flex-1 px-6 py-3 bg-neon-lime hover:opacity-90 text-pitch-black font-w590 rounded-buttons transition-opacity focus:outline-none focus:ring-2 focus:ring-neon-lime focus:ring-offset-2 focus:ring-offset-pitch-black disabled:opacity-50 disabled:cursor-not-allowed"
+							aria-label="View results"
+						>
+							View Results
 						</button>
 					)}
 				</div>
