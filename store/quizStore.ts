@@ -91,7 +91,7 @@ interface QuizComputed {
 interface QuizActions {
 	loadQuestions: (questions: QuizQuestion[]) => void;
 	loadQuestionsPage: (page: number, limit?: number) => Promise<void>;
-	loadSessionQuestions: (userId?: string) => Promise<void>;
+	loadSessionQuestions: (userId?: string, questionCount?: number) => Promise<void>;
 	selectOption: (optionIndex: number) => void;
 	toggleOption: (optionIndex: number) => void;
 	confirmAnswer: () => void;
@@ -571,9 +571,9 @@ export const useQuizStore = create<QuizState>()(
 				}
 			},
 
-			loadSessionQuestions: async (userId?: string) => {
+			loadSessionQuestions: async (userId?: string, questionCount?: number) => {
 				try {
-					const sessionData = await get().startSession(userId);
+					const sessionData = await get().startSession(userId, questionCount);
 					if (!sessionData) {
 						throw new Error("Failed to start session");
 					}

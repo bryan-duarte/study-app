@@ -29,6 +29,7 @@ export default function QuizContainer() {
 	const sessionRemaining = useQuizStore((state) => state.sessionRemaining);
 	const isSessionComplete = useQuizStore((state) => state.isSessionComplete);
 	const session = useQuizStore((state) => state.session);
+	const selectedQuestionCount = useQuizStore((state) => state.selectedQuestionCount);
 
 	const [isLoading, setIsLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
@@ -61,8 +62,8 @@ export default function QuizContainer() {
 
 			try {
 				// Load session questions (this will call startSession internally)
-				// Pass undefined for userId to let the backend handle guest users
-				await loadSessionQuestions(undefined);
+				// Pass undefined for userId and use the selected question count
+				await loadSessionQuestions(undefined, selectedQuestionCount);
 			} catch (err) {
 				const errorMessage =
 					err instanceof Error ? err.message : "Failed to load quiz questions";
@@ -77,7 +78,7 @@ export default function QuizContainer() {
 			initializeQuiz();
 			hasInitializedRef.current = true;
 		}
-	}, [loadSessionQuestions]);
+	}, [loadSessionQuestions, selectedQuestionCount]);
 
 	// Redirect to results when session is complete
 	useEffect(() => {

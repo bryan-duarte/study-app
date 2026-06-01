@@ -13,12 +13,15 @@ const SESSION_QUESTIONS_COUNT = 25;
 /**
  * POST: Create a new quiz session and return assigned questions
  *
- * Request body: { user_id?: string }
+ * Request body: { user_id?: string, question_count?: number }
  * Returns: SessionStartResponse with sessionId, questions array, and totalAvailable
  */
 export async function POST(request: Request) {
   try {
-    const { user_id } = await request.json();
+    const { user_id, question_count } = await request.json();
+
+    // Use the provided question count or default to SESSION_QUESTIONS_COUNT
+    const requestedCount = question_count ?? SESSION_QUESTIONS_COUNT;
 
     const supabase = createSupabaseClient();
 
@@ -48,7 +51,7 @@ export async function POST(request: Request) {
     }
 
     // Step 3: Fetch available questions (excluding answered ones)
-    const availableCount = Math.min(totalAvailable || 0, SESSION_QUESTIONS_COUNT);
+    const availableCount = Math.min(totalAvailable || 0, requestedCount);
 
     let questionsData: any[] = [];
 
