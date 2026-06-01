@@ -1,0 +1,31 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e3]:
+    - region "Quiz progress" [ref=e4]:
+      - generic [ref=e5]:
+        - generic [ref=e6]: Question 1 of 65
+        - generic [ref=e7]: 2% complete
+      - progressbar "2% complete" [ref=e8]
+    - generic [ref=e10]:
+      - heading "A company runs a data processing workflow that takes about 60 minutes to complete. The workflow can withstand disruptions and it can be started and stopped multiple times. Which is the most cost-effective solution to build a solution for the workflow?" [level=2] [ref=e12]
+      - generic [ref=e13]:
+        - radiogroup "Answer options" [ref=e14]:
+          - 'radio "Option A: Use AWS Lambda function to run the workflow processes" [ref=e15]':
+            - generic [ref=e16]:
+              - generic [ref=e17]: A.
+              - paragraph [ref=e18]: Use AWS Lambda function to run the workflow processes
+          - 'radio "Option B: Use Amazon EC2 reserved instances to run the workflow processes" [ref=e19]':
+            - generic [ref=e20]:
+              - generic [ref=e21]: B.
+              - paragraph [ref=e22]: Use Amazon EC2 reserved instances to run the workflow processes
+          - 'radio "Option C: Use Amazon EC2 spot instances to run the workflow processes" [ref=e23]':
+            - generic [ref=e24]:
+              - generic [ref=e25]: C.
+              - paragraph [ref=e26]: Use Amazon EC2 spot instances to run the workflow processes
+          - 'radio "Option D: Use Amazon EC2 on-demand instances to run the workflow processes" [ref=e27]':
+            - generic [ref=e28]:
+              - generic [ref=e29]: D.
+              - paragraph [ref=e30]: Use Amazon EC2 on-demand instances to run the workflow processes
+        - button "Submit answer" [ref=e31]: Submit Answer
+  - button "Open Next.js Dev Tools" [ref=e37] [cursor=pointer]:
+    - img [ref=e38]
+  - alert [ref=e41]

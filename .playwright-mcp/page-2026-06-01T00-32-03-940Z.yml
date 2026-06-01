@@ -1,0 +1,6 @@
+- generic [active] [ref=e1]:
+  - status [ref=e3]:
+    - paragraph [ref=e4]: Loading quiz...
+  - button "Open Next.js Dev Tools" [ref=e10] [cursor=pointer]:
+    - img [ref=e11]
+  - alert [ref=e14]

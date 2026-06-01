@@ -1,0 +1,34 @@
+- generic [ref=e1]:
+  - button "Open Next.js Dev Tools" [ref=e18] [cursor=pointer]:
+    - img [ref=e19]
+  - alert [ref=e12]
+  - generic [ref=e23]:
+    - region "Quiz progress" [ref=e24]:
+      - generic [ref=e25]:
+        - generic [ref=e26]: Question 1 of 65
+        - generic [ref=e27]: 2% complete
+      - progressbar "2% complete" [ref=e28]
+    - generic [ref=e30]:
+      - heading "A company runs a data processing workflow that takes about 60 minutes to complete. The workflow can withstand disruptions and it can be started and stopped multiple times. Which is the most cost-effective solution to build a solution for the workflow?" [level=2] [ref=e32]
+      - generic [ref=e33]:
+        - radiogroup "Answer options" [ref=e34]:
+          - 'radio "Option A: Use AWS Lambda function to run the workflow processes" [checked] [ref=e35]':
+            - generic [ref=e36]:
+              - generic [ref=e37]: A.
+              - paragraph [ref=e38]: Use AWS Lambda function to run the workflow processes
+          - 'radio "Option B: Use Amazon EC2 reserved instances to run the workflow processes" [ref=e39]':
+            - generic [ref=e40]:
+              - generic [ref=e41]: B.
+              - paragraph [ref=e42]: Use Amazon EC2 reserved instances to run the workflow processes
+          - 'radio "Option C: Use Amazon EC2 spot instances to run the workflow processes" [ref=e43]':
+            - generic [ref=e44]:
+              - generic [ref=e45]: C.
+              - paragraph [ref=e46]: Use Amazon EC2 spot instances to run the workflow processes
+          - 'radio "Option D: Use Amazon EC2 on-demand instances to run the workflow processes" [ref=e47]':
+            - generic [ref=e48]:
+              - generic [ref=e49]: D.
+              - paragraph [ref=e50]: Use Amazon EC2 on-demand instances to run the workflow processes
+        - button "Submit answer" [active] [ref=e51]: Submit Answer
+      - region "Answer feedback" [ref=e52]:
+        - heading "Incorrect" [level=3] [ref=e53]
+        - paragraph [ref=e55]: "Correct option: Use Amazon EC2 spot instances to run the workflow processes Amazon EC2 instance types: via - https://aws.amazon.com/ec2/pricing/ Amazon EC2 Spot instances allow you to request spare Amazon EC2 computing capacity for up to 90% off the On-Demand price. Spot instances are recommended for: Applications that have flexible start and end times Applications that are feasible only at very low compute prices Users with urgent computing needs for large amounts of additional capacity For the given use case, spot instances offer the most cost-effective solution as the workflow can withstand disruptions and can be started and stopped multiple times. For example, considering a process that runs for an hour and needs about 1024 MB of memory, spot instance pricing for a t2.micro instance (having 1024 MB of RAM) is $0.0035 per hour. Spot instance pricing: via - https://aws.amazon.com/ec2/spot/pricing/ Contrast this with the pricing of a Lambda function (having 1024 MB of allocated memory), which comes out to $0.0000000167 per 1ms or $0.06 per hour ($0.0000000167 * 1000 * 60 * 60 per hour). AWS Lambda function pricing: via - https://aws.amazon.com/lambda/pricing/ Thus, a spot instance turns out to be about 20 times cost effective than a Lambda function to meet the requirements of the given use case. Incorrect options: Use AWS Lambda function to run the workflow processes - As mentioned in the explanation above, a Lambda function turns out to be 20 times more expensive than a spot instance to meet the workflow requirements of the given use case, so this option is incorrect. You should also note that the maximum execution time of a Lambda function is 15 minutes, so the workflow process would be disrupted for sure. On the other hand, it is certainly possible that the workflow process can be completed in a single run on the spot instance (the average frequency of stop instance interruption across all Regions and instance types is <10%). Use Amazon EC2 on-demand instances to run the workflow processes Use Amazon EC2 reserved instances to run the workflow processes You should note that both on-demand and reserved instances are more expensive than spot instances. In addition, reserved instances have a term of 1 year or 3 years, so they are not suited for the given workflow. Therefore, both these options are incorrect. References: https://aws.amazon.com/ec2/pricing/ https://aws.amazon.com/ec2/spot/pricing/ https://aws.amazon.com/lambda/pricing/ https://aws.amazon.com/ec2/spot/instance-advisor/"
