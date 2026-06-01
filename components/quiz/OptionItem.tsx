@@ -6,8 +6,10 @@ interface OptionItemProps {
 	isSelected: boolean;
 	showResult: boolean;
 	isCorrect: boolean;
+	shouldShowCorrect?: boolean;
 	onSelect: () => void;
 	disabled: boolean;
+	isMultiSelect?: boolean;
 }
 
 export default function OptionItem({
@@ -16,22 +18,27 @@ export default function OptionItem({
 	isSelected,
 	showResult,
 	isCorrect,
+	shouldShowCorrect = false,
 	onSelect,
 	disabled,
+	isMultiSelect = false,
 }: OptionItemProps) {
 	const optionLabel = String.fromCharCode(65 + index);
 
 	const baseClasses =
-		"w-full text-left p-4 rounded-buttons border-2 transition-all";
+		"w-full text-left p-4 rounded-cards border-2 transition-all relative";
 
+	// Determine the visual state
 	const stateClasses = showResult
 		? isCorrect
-			? "border-emerald bg-emerald/40 shadow-[0_0_24px_rgba(34,197,94,0.5)]"
+			? "border-forest-green bg-forest-green/20"
 			: isSelected
-				? "border-warning-red bg-warning-red/40 shadow-[0_0_24px_rgba(235,87,87,0.5)]"
-				: "border-charcoal-grey bg-deep-slate opacity-40"
+				? "border-warning-red bg-warning-red/20"
+				: shouldShowCorrect
+					? "border-emerald bg-emerald/10 border-dashed"
+					: "border-charcoal-grey bg-deep-slate opacity-50"
 		: isSelected
-			? "border-neon-lime bg-neon-lime/40"
+			? "border-neon-lime bg-neon-lime/10"
 			: "border-charcoal-grey bg-deep-slate hover:border-muted-ash hover:bg-gunmetal";
 
 	const disabledClasses = disabled ? "cursor-not-allowed" : "cursor-pointer";
@@ -43,32 +50,101 @@ export default function OptionItem({
 			onClick={onSelect}
 			disabled={disabled}
 			className={`${baseClasses} ${stateClasses} ${disabledClasses}`}
-			role="radio"
+			role={isMultiSelect ? "checkbox" : "radio"}
 			aria-checked={showResult ? isCorrect : ariaSelected}
 			aria-disabled={disabled}
 			aria-label={`Option ${optionLabel}: ${description}`}
 		>
 			<div className="flex gap-3 items-start">
-				<span className="text-fog-grey font-mono flex-shrink-0">
-					{optionLabel}.
+				{/* Option letter indicator */}
+				<span
+					className={`font-mono flex-shrink-0 w-6 h-6 flex items-center justify-center rounded-badges text-xs font-semibold ${
+						showResult && isCorrect
+							? "bg-forest-green text-pitch-black"
+							: showResult && isSelected && !isCorrect
+								? "bg-warning-red text-pitch-black"
+								: showResult && shouldShowCorrect
+									? "bg-emerald/30 text-emerald"
+									: isSelected
+										? "bg-neon-lime text-pitch-black"
+										: "bg-gunmetal text-storm-cloud"
+					}`}
+				>
+					{optionLabel}
 				</span>
-				<p className="text-option text-porcelain flex-1">{description}</p>
 
+				<p className={`text-option flex-1 ${
+					showResult && isCorrect
+						? "text-forest-green font-medium"
+						: showResult && isSelected && !isCorrect
+							? "text-warning-red"
+							: showResult && shouldShowCorrect
+								? "text-emerald/80"
+								: "text-porcelain"
+				}`}>
+					{description}
+				</p>
+
+				{/* Result indicator icons */}
 				{showResult && isCorrect && (
-					<span
-						className="text-emerald text-2xl font-black flex-shrink-0 drop-shadow-[0_0_8px_rgba(34,197,94,0.6)]"
+					<div
+						className="flex-shrink-0 w-6 h-6 flex items-center justify-center rounded-full bg-forest-green"
 						aria-label="Correct answer"
 					>
-						✓
-					</span>
+						<svg
+							className="w-4 h-4 text-pitch-black"
+							fill="none"
+							stroke="currentColor"
+							viewBox="0 0 24 24"
+							strokeWidth="3"
+						>
+							<path
+								strokeLinecap="round"
+								strokeLinejoin="round"
+								d="M5 13l4 4L19 7"
+							/>
+						</svg>
+					</div>
 				)}
 				{showResult && isSelected && !isCorrect && (
-					<span
-						className="text-warning-red text-2xl font-black flex-shrink-0 drop-shadow-[0_0_8px_rgba(235,87,87,0.6)]"
+					<div
+						className="flex-shrink-0 w-6 h-6 flex items-center justify-center rounded-full bg-warning-red"
 						aria-label="Incorrect answer"
 					>
-						✗
-					</span>
+						<svg
+							className="w-4 h-4 text-pitch-black"
+							fill="none"
+							stroke="currentColor"
+							viewBox="0 0 24 24"
+							strokeWidth="3"
+						>
+							<path
+								strokeLinecap="round"
+								strokeLinejoin="round"
+								d="M6 18L18 6M6 6l12 12"
+							/>
+						</svg>
+					</div>
+				)}
+				{showResult && shouldShowCorrect && !isSelected && (
+					<div
+						className="flex-shrink-0 w-6 h-6 flex items-center justify-center rounded-full border border-emerald/50"
+						aria-label="Missed correct answer"
+					>
+						<svg
+							className="w-4 h-4 text-emerald/70"
+							fill="none"
+							stroke="currentColor"
+							viewBox="0 0 24 24"
+							strokeWidth="3"
+						>
+							<path
+								strokeLinecap="round"
+								strokeLinejoin="round"
+								d="M5 13l4 4L19 7"
+							/>
+						</svg>
+					</div>
 				)}
 			</div>
 		</button>

@@ -9,19 +9,44 @@ interface FeedbackCardProps {
 }
 
 export default function FeedbackCard({ question }: FeedbackCardProps) {
-	const currentSelectedOption = useQuizStore((state) => {
+	const currentSelectedAnswer = useQuizStore((state) => {
 		const idx = state.currentIndex;
 		return state.answers.get(idx);
 	});
 
-	const hasValidSelection =
-		currentSelectedOption !== null &&
-		currentSelectedOption !== undefined &&
-		currentSelectedOption >= 0;
-	const selectedOption = hasValidSelection
-		? (question.options[currentSelectedOption] ?? null)
-		: null;
-	const isCorrect = selectedOption?.isCorrect ?? false;
+	const isMultiSelect = question.type === "multi-option";
+
+	let isCorrect = false;
+	let selectedOptions: typeof question.options = [];
+	let correctOptions: typeof question.options = [];
+
+	if (isMultiSelect) {
+		const selectedIndices = Array.isArray(currentSelectedAnswer)
+			? currentSelectedAnswer
+			: [];
+		selectedOptions = selectedIndices.map(
+			(i) => question.options[i] ?? null,
+		).filter(Boolean);
+		correctOptions = question.options.filter((opt) => opt.isCorrect);
+
+		const allCorrectSelected = correctOptions.every((correctOpt) =>
+			selectedOptions.some((selected) => selected?.description === correctOpt.description),
+		);
+		const noIncorrectSelected = selectedOptions.every((selected) =>
+			correctOptions.some((correct) => correct.description === selected?.description),
+		);
+		isCorrect = allCorrectSelected && noIncorrectSelected && selectedOptions.length > 0;
+	} else {
+		const hasValidSelection =
+			typeof currentSelectedAnswer === "number" &&
+			currentSelectedAnswer >= 0;
+		const selectedOption = hasValidSelection
+			? (question.options[currentSelectedAnswer] ?? null)
+			: null;
+		isCorrect = selectedOption?.isCorrect ?? false;
+		selectedOptions = selectedOption ? [selectedOption] : [];
+		correctOptions = question.options.filter((opt) => opt.isCorrect);
+	}
 
 	const feedbackTitle = isCorrect ? "Correct!" : "Incorrect";
 
@@ -37,9 +62,13 @@ export default function FeedbackCard({ question }: FeedbackCardProps) {
 				{feedbackTitle}
 			</h3>
 
-			{selectedOption?.reasoning && (
+			{selectedOptions.length > 0 && (
 				<div className="mt-4 text-light-steel">
-					<MarkdownRenderer content={selectedOption.reasoning} />
+					{selectedOptions.map((opt) => (
+						opt?.reasoning && (
+							<MarkdownRenderer key={opt.description} content={opt.reasoning} />
+						)
+					))}
 				</div>
 			)}
 		</div>

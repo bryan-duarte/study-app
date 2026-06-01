@@ -45,6 +45,7 @@ export default function QuizContainer() {
 	const confirmAnswer = useQuizStore((state) => state.confirmAnswer);
 	const nextQuestion = useQuizStore((state) => state.nextQuestion);
 	const previousQuestion = useQuizStore((state) => state.previousQuestion);
+	const isSubmitting = useQuizStore((state) => state.isSubmitting);
 
 	const [isLoading, setIsLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
@@ -96,6 +97,50 @@ export default function QuizContainer() {
 		initializeQuiz();
 	}, [loadQuestions, isShuffled, shuffleQuestions]);
 
+	// Keyboard navigation
+	useEffect(() => {
+		const handleKeyDown = (e: KeyboardEvent) => {
+			// Ignore if typing in an input
+			if (
+				e.target instanceof HTMLInputElement ||
+				e.target instanceof HTMLTextAreaElement
+			) {
+				return;
+			}
+
+			// Submit: Enter or Cmd/Ctrl+Enter
+			if ((e.key === "Enter" || (e.key === "Enter" && (e.metaKey || e.ctrlKey))) &&
+				hasAnsweredCurrent &&
+				!isCurrentConfirmed &&
+				!isSubmitting) {
+				e.preventDefault();
+				confirmAnswer();
+				return;
+			}
+
+			// Next: ArrowRight or Cmd/Ctrl+ArrowRight
+			if ((e.key === "ArrowRight" || (e.key === "ArrowRight" && (e.metaKey || e.ctrlKey))) &&
+				isCurrentConfirmed &&
+				hasNextQuestion) {
+				e.preventDefault();
+				nextQuestion();
+				return;
+			}
+
+			// Previous: ArrowLeft or Cmd/Ctrl+ArrowLeft
+			if ((e.key === "ArrowLeft" || (e.key === "ArrowLeft" && (e.metaKey || e.ctrlKey))) &&
+				isCurrentConfirmed &&
+				hasPreviousQuestion) {
+				e.preventDefault();
+				previousQuestion();
+				return;
+			}
+		};
+
+		window.addEventListener("keydown", handleKeyDown);
+		return () => window.removeEventListener("keydown", handleKeyDown);
+	}, [hasAnsweredCurrent, isCurrentConfirmed, hasNextQuestion, hasPreviousQuestion, isSubmitting, confirmAnswer, nextQuestion, previousQuestion]);
+
 	if (isLoading) {
 		return (
 			<div
@@ -119,7 +164,7 @@ export default function QuizContainer() {
 				<button
 					onClick={() => window.location.reload()}
 					type="button"
-					className="px-4 py-2 bg-neon-lime text-black rounded hover:opacity-90 transition-opacity"
+					className="px-4 py-2 bg-neon-lime text-black rounded hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
 				>
 					Retry
 				</button>
@@ -167,7 +212,7 @@ export default function QuizContainer() {
 					questionType={currentQuestion.type}
 				/>
 
-				<OptionsList options={currentQuestion.options} />
+				<OptionsList options={currentQuestion.options} questionType={currentQuestion.type} />
 
 				{isCurrentConfirmed && <FeedbackCard question={currentQuestion} />}
 			</div>
@@ -183,8 +228,9 @@ export default function QuizContainer() {
 						<button
 							onClick={previousQuestion}
 							type="button"
-							className="px-6 py-3 bg-gunmetal hover:bg-muted-ash text-porcelain rounded-buttons transition-colors focus:outline-none focus:ring-2 focus:ring-storm-cloud focus:ring-offset-2 focus:ring-offset-pitch-black"
+							className="px-6 py-3 bg-gunmetal hover:bg-muted-ash text-porcelain rounded-buttons transition-colors focus:outline-none focus:ring-2 focus:ring-storm-cloud focus:ring-offset-2 focus:ring-offset-pitch-black disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-gunmetal"
 							aria-label="Previous question"
+							disabled={isSubmitting}
 						>
 							Previous
 						</button>
@@ -194,10 +240,11 @@ export default function QuizContainer() {
 						<button
 							onClick={confirmAnswer}
 							type="button"
-							className="flex-1 px-6 py-3 bg-neon-lime hover:opacity-90 text-pitch-black font-w590 rounded-buttons transition-opacity focus:outline-none focus:ring-2 focus:ring-neon-lime focus:ring-offset-2 focus:ring-offset-pitch-black"
+							disabled={isSubmitting}
+							className="flex-1 px-6 py-3 bg-neon-lime hover:opacity-90 text-pitch-black font-w590 rounded-buttons transition-opacity focus:outline-none focus:ring-2 focus:ring-neon-lime focus:ring-offset-2 focus:ring-offset-pitch-black disabled:opacity-50 disabled:cursor-not-allowed"
 							aria-label="Submit answer"
 						>
-							Submit Answer
+							{isSubmitting ? "Validating..." : "Submit Answer"}
 						</button>
 					)}
 
@@ -205,12 +252,26 @@ export default function QuizContainer() {
 						<button
 							onClick={nextQuestion}
 							type="button"
-							className="flex-1 px-6 py-3 bg-neon-lime hover:opacity-90 text-pitch-black font-w590 rounded-buttons transition-opacity focus:outline-none focus:ring-2 focus:ring-neon-lime focus:ring-offset-2 focus:ring-offset-pitch-black"
+							className="flex-1 px-6 py-3 bg-neon-lime hover:opacity-90 text-pitch-black font-w590 rounded-buttons transition-opacity focus:outline-none focus:ring-2 focus:ring-neon-lime focus:ring-offset-2 focus:ring-offset-pitch-black disabled:opacity-50 disabled:cursor-not-allowed"
 							aria-label="Next question"
+							disabled={isSubmitting}
 						>
 							Next Question
 						</button>
 					)}
+				</div>
+
+				{/* Keyboard shortcuts hint */}
+				<div className="max-w-3xl mx-auto mt-3 text-center md:hidden">
+					<p className="text-xs text-storm-cloud">
+						{!isCurrentConfirmed && hasAnsweredCurrent
+							? "Press Enter to submit"
+							: isCurrentConfirmed && hasNextQuestion
+								? "Swipe or press → for next"
+								: isCurrentConfirmed && hasPreviousQuestion
+									? "Press ← for previous"
+									: ""}
+					</p>
 				</div>
 			</div>
 		</div>

@@ -14,14 +14,30 @@ export default function MistakeCard({
 	question,
 }: MistakeCardProps) {
 	const { confirmedAnswers } = useQuizStore();
-	const selectedOptionIndex = confirmedAnswers.get(questionIndex);
+	const selectedAnswer = confirmedAnswers.get(questionIndex);
 
-	if (selectedOptionIndex === undefined) return null;
+	if (selectedAnswer === undefined) return null;
 
-	const selectedOption = question.options[selectedOptionIndex];
-	const correctOptionIndex = question.options.findIndex((opt) => opt.isCorrect);
-	const correctOption =
-		correctOptionIndex >= 0 ? question.options[correctOptionIndex] : null;
+	const isMultiSelect = question.type === "multi-option";
+
+	let selectedOptions: typeof question.options = [];
+	let correctOptions: typeof question.options = [];
+
+	if (isMultiSelect) {
+		const selectedIndices = Array.isArray(selectedAnswer)
+			? selectedAnswer
+			: [selectedAnswer];
+		selectedOptions = selectedIndices
+			.map((i) => question.options[i])
+			.filter((opt) => opt !== undefined);
+		correctOptions = question.options.filter((opt) => opt.isCorrect);
+	} else {
+		const selectedOptionIndex =
+			typeof selectedAnswer === "number" ? selectedAnswer : selectedAnswer[0];
+		const selectedOption = question.options[selectedOptionIndex];
+		selectedOptions = selectedOption ? [selectedOption] : [];
+		correctOptions = question.options.filter((opt) => opt.isCorrect);
+	}
 
 	const questionNumber = questionIndex + 1;
 
@@ -38,25 +54,25 @@ export default function MistakeCard({
 				<div className="flex gap-2">
 					<span className="text-warning-red font-w510">Your answer:</span>
 					<span className="text-storm-cloud">
-						{selectedOption?.description}
+						{selectedOptions.map((opt) => opt.description).join(", ")}
 					</span>
 				</div>
 
-				{correctOption && (
+				{correctOptions.length > 0 && (
 					<div className="flex gap-2">
 						<span className="text-emerald font-w510">Correct answer:</span>
 						<span className="text-storm-cloud">
-							{correctOption.description}
+							{correctOptions.map((opt) => opt.description).join(", ")}
 						</span>
 					</div>
 				)}
 			</div>
 
-			{correctOption?.reasoning && (
+			{correctOptions[0]?.reasoning && (
 				<div className="mt-4 p-3 bg-pitch-black rounded-buttons">
 					<p className="text-caption text-fog-grey mb-1">Explanation:</p>
 					<div className="text-body text-storm-cloud">
-						<MarkdownRenderer content={correctOption.reasoning} />
+						<MarkdownRenderer content={correctOptions[0].reasoning} />
 					</div>
 				</div>
 			)}

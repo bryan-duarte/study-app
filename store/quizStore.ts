@@ -23,13 +23,14 @@ interface SyncState {
 
 interface QuizData {
 	questions: QuizQuestion[];
-	answers: Map<number, number>;
-	confirmedAnswers: Map<number, number>;
+	answers: Map<number, number | number[]>;
+	confirmedAnswers: Map<number, number | number[]>;
 	currentIndex: number;
 	pagination: PaginationState;
 	sync: SyncState;
 	shuffledIndices: number[];
 	isShuffled: boolean;
+	isSubmitting: boolean;
 }
 
 interface QuizComputed {
@@ -47,6 +48,7 @@ interface QuizActions {
 	loadQuestions: (questions: QuizQuestion[]) => void;
 	loadQuestionsPage: (page: number, limit?: number) => Promise<void>;
 	selectOption: (optionIndex: number) => void;
+	toggleOption: (optionIndex: number) => void;
 	confirmAnswer: () => void;
 	nextQuestion: () => void;
 	previousQuestion: () => void;
@@ -100,39 +102,65 @@ const computeIsComplete = (
 };
 
 const computeHasAnsweredCurrent = (
-	answers: Map<number, number>,
+	answers: Map<number, number | number[]>,
 	currentIndex: number,
 ): boolean => {
-	return answers.has(currentIndex);
+	const answer = answers.get(currentIndex);
+	if (typeof answer === "number") {
+		return answer >= 0;
+	}
+	return Array.isArray(answer) && answer.length > 0;
 };
 
 const computeIsCurrentConfirmed = (
-	confirmedAnswers: Map<number, number>,
+	confirmedAnswers: Map<number, number | number[]>,
 	currentIndex: number,
 ): boolean => {
 	return confirmedAnswers.has(currentIndex);
 };
 
 const computeAnsweredCount = (
-	confirmedAnswers: Map<number, number>,
+	confirmedAnswers: Map<number, number | number[]>,
 ): number => {
 	return confirmedAnswers.size;
 };
 
 const computeCorrectCount = (
-	confirmedAnswers: Map<number, number>,
+	confirmedAnswers: Map<number, number | number[]>,
 	questions: QuizQuestion[],
 ): number => {
 	let correct = 0;
 	const entries = Array.from(confirmedAnswers.entries());
 
-	for (const [questionIndex, selectedOptionIndex] of entries) {
+	for (const [questionIndex, selectedAnswer] of entries) {
 		const question = questions[questionIndex];
 		if (!question) continue;
 
-		const selectedOption = question.options[selectedOptionIndex];
-		if (selectedOption?.isCorrect) {
-			correct++;
+		const isMultiSelect = question.type === "multi-option";
+		const correctOptionIndices = question.options
+			.map((opt, idx) => (opt.isCorrect ? idx : -1))
+			.filter((idx) => idx !== -1);
+
+		if (isMultiSelect) {
+			const selectedIndices = Array.isArray(selectedAnswer)
+				? selectedAnswer
+				: [selectedAnswer];
+			const allCorrectSelected = correctOptionIndices.every((idx) =>
+				selectedIndices.includes(idx),
+			);
+			const noIncorrectSelected = selectedIndices.every((idx) =>
+				correctOptionIndices.includes(idx),
+			);
+			if (allCorrectSelected && noIncorrectSelected) {
+				correct++;
+			}
+		} else {
+			const selectedOptionIndex =
+				typeof selectedAnswer === "number" ? selectedAnswer : selectedAnswer[0];
+			const selectedOption = question.options[selectedOptionIndex];
+			if (selectedOption?.isCorrect) {
+				correct++;
+			}
 		}
 	}
 
@@ -161,6 +189,7 @@ export const useQuizStore = create<QuizState>()(
 			},
 			shuffledIndices: [],
 			isShuffled: false,
+			isSubmitting: false,
 
 			// Computed properties
 			get currentQuestion(): QuizQuestion | null {
@@ -233,13 +262,33 @@ export const useQuizStore = create<QuizState>()(
 			},
 
 			selectOption: (optionIndex) => {
-				const { currentIndex, answers } = get();
+				const { currentIndex, answers, questions } = get();
+				const question = questions[currentIndex];
+				if (!question) return;
+
+				const isMultiSelect = question.type === "multi-option";
 				const newAnswers = new Map(answers);
-				newAnswers.set(currentIndex, optionIndex);
+
+				if (isMultiSelect) {
+					const current = answers.get(currentIndex);
+					const selectedArray = Array.isArray(current) ? current : [];
+					const isSelected = selectedArray.includes(optionIndex);
+					const newArray = isSelected
+						? selectedArray.filter((i) => i !== optionIndex)
+						: [...selectedArray, optionIndex].sort((a, b) => a - b);
+					newAnswers.set(currentIndex, newArray);
+				} else {
+					newAnswers.set(currentIndex, optionIndex);
+				}
 				set({ answers: newAnswers });
 			},
 
-			confirmAnswer: () => {
+			toggleOption: (optionIndex) => {
+				const { selectOption } = get();
+				selectOption(optionIndex);
+			},
+
+			confirmAnswer: async () => {
 				const { currentIndex, answers, confirmedAnswers } = get();
 				const selectedOption = answers.get(currentIndex);
 
@@ -248,9 +297,14 @@ export const useQuizStore = create<QuizState>()(
 					return;
 				}
 
+				set({ isSubmitting: true });
+
+				// Simulate validation delay for better UX
+				await new Promise((resolve) => setTimeout(resolve, 300));
+
 				const newConfirmedAnswers = new Map(confirmedAnswers);
 				newConfirmedAnswers.set(currentIndex, selectedOption);
-				set({ confirmedAnswers: newConfirmedAnswers });
+				set({ confirmedAnswers: newConfirmedAnswers, isSubmitting: false });
 			},
 
 			nextQuestion: () => {
@@ -411,10 +465,10 @@ export const useQuizStore = create<QuizState>()(
 				if (!state) return;
 
 				state.answers = new Map(
-					state.answers as unknown as Array<[number, number]>,
+					state.answers as unknown as Array<[number, number | number[]]>,
 				);
 				state.confirmedAnswers = new Map(
-					state.confirmedAnswers as unknown as Array<[number, number]>,
+					state.confirmedAnswers as unknown as Array<[number, number | number[]]>,
 				);
 				state.pagination = {
 					currentPage: state.pagination?.currentPage ?? DEFAULT_PAGE,

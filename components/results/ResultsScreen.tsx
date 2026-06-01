@@ -22,12 +22,33 @@ export default function ResultsScreen() {
 			: 0;
 
 	const mistakes = Array.from(confirmedAnswers.entries())
-		.filter(([questionIndex, selectedOptionIndex]) => {
+		.filter(([questionIndex, selectedAnswer]) => {
 			const question = questions[questionIndex];
 			if (!question) return false;
 
-			const selectedOption = question.options[selectedOptionIndex];
-			return selectedOption?.isCorrect === false;
+			const isMultiSelect = question.type === "multi-option";
+
+			if (isMultiSelect) {
+				const selectedIndices = Array.isArray(selectedAnswer)
+					? selectedAnswer
+					: [];
+				const correctOptionIndices = question.options
+					.map((opt, idx) => (opt.isCorrect ? idx : -1))
+					.filter((idx) => idx !== -1);
+
+				const allCorrectSelected = correctOptionIndices.every((idx) =>
+					selectedIndices.includes(idx),
+				);
+				const noIncorrectSelected = selectedIndices.every((idx) =>
+					correctOptionIndices.includes(idx),
+				);
+				return !(allCorrectSelected && noIncorrectSelected && selectedIndices.length > 0);
+			} else {
+				const selectedOptionIndex =
+					typeof selectedAnswer === "number" ? selectedAnswer : selectedAnswer[0];
+				const selectedOption = question.options[selectedOptionIndex];
+				return selectedOption?.isCorrect === false;
+			}
 		})
 		.map(([questionIndex]) => questionIndex);
 
