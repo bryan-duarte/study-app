@@ -1,87 +1,47 @@
 "use client";
 
+import { MarkdownRenderer } from "@/components/ui/MarkdownRenderer";
+import type { QuizQuestion } from "@/lib/transformers/question";
 import { useQuizStore } from "@/store/quizStore";
-import { useCallback } from "react";
-
-interface Option {
-  description: string;
-  is_correct: boolean;
-  reasoning: string;
-}
-
-interface Question {
-  title: string;
-  options: Option[];
-}
 
 interface FeedbackCardProps {
-  question: Question;
+	question: QuizQuestion;
 }
 
 export default function FeedbackCard({ question }: FeedbackCardProps) {
-  // Access questions directly to get total count
-  const questions = useQuizStore((state) => state.questions);
-  const currentIndex = useQuizStore((state) => state.currentIndex);
+	const currentSelectedOption = useQuizStore((state) => {
+		const idx = state.currentIndex;
+		return state.answers.get(idx);
+	});
 
-  // Select functions
-  const nextQuestion = useQuizStore((state) => state.nextQuestion);
-  const previousQuestion = useQuizStore((state) => state.previousQuestion);
+	const hasValidSelection =
+		currentSelectedOption !== null &&
+		currentSelectedOption !== undefined &&
+		currentSelectedOption >= 0;
+	const selectedOption = hasValidSelection
+		? (question.options[currentSelectedOption] ?? null)
+		: null;
+	const isCorrect = selectedOption?.isCorrect ?? false;
 
-  const currentSelectedOption = useQuizStore((state) => {
-    const idx = state.currentIndex;
-    return state.answers.get(idx);
-  });
+	const feedbackTitle = isCorrect ? "Correct!" : "Incorrect";
 
-  const totalQuestions = questions.length;
-  const hasValidSelection = currentSelectedOption !== null && currentSelectedOption !== undefined && currentSelectedOption >= 0;
-  const selectedOption = hasValidSelection ? (question.options[currentSelectedOption] ?? null) : null;
-  const isCorrect = selectedOption?.is_correct ?? false;
-  const hasNextQuestion = currentIndex < totalQuestions - 1;
-  const hasPreviousQuestion = currentIndex > 0;
+	return (
+		<div
+			className={`border-l-4 ${isCorrect ? "border-emerald" : "border-warning-red"} bg-deep-slate p-6 rounded-cards shadow-subtle`}
+			role="region"
+			aria-label="Answer feedback"
+		>
+			<h3
+				className={`font-w590 mb-3 text-body ${isCorrect ? "text-emerald" : "text-warning-red"}`}
+			>
+				{feedbackTitle}
+			</h3>
 
-  const feedbackTitle = isCorrect ? "Correct!" : "Incorrect";
-
-  return (
-    <div
-      className={`border-l-4 ${isCorrect ? 'border-emerald' : 'border-warning-red'} bg-deep-slate p-6 rounded-cards shadow-subtle`}
-      role="region"
-      aria-label="Answer feedback"
-    >
-      <h3
-        className={`font-w590 mb-3 text-body ${isCorrect ? 'text-emerald' : 'text-warning-red'}`}
-      >
-        {feedbackTitle}
-      </h3>
-
-      {selectedOption?.reasoning && (
-        <div className="prose prose-invert prose-sm max-w-none">
-          <p className="text-light-steel whitespace-pre-wrap">
-            {selectedOption.reasoning}
-          </p>
-        </div>
-      )}
-
-      <div className="flex gap-3 mt-6">
-        {hasPreviousQuestion && (
-          <button
-            onClick={() => previousQuestion()}
-            className="px-4 py-2 bg-gunmetal hover:bg-muted-ash text-porcelain rounded-buttons transition-colors focus:outline-none focus:ring-2 focus:ring-storm-cloud focus:ring-offset-2 focus:ring-offset-pitch-black"
-            aria-label="Previous question"
-          >
-            Previous
-          </button>
-        )}
-
-        {hasNextQuestion && (
-          <button
-            onClick={() => nextQuestion()}
-            className="px-4 py-2 bg-neon-lime hover:opacity-90 text-pitch-black font-w590 rounded-buttons transition-opacity focus:outline-none focus:ring-2 focus:ring-neon-lime focus:ring-offset-2 focus:ring-offset-pitch-black ml-auto"
-            aria-label="Next question"
-          >
-            Next Question
-          </button>
-        )}
-      </div>
-    </div>
-  );
+			{selectedOption?.reasoning && (
+				<div className="mt-4 text-light-steel">
+					<MarkdownRenderer content={selectedOption.reasoning} />
+				</div>
+			)}
+		</div>
+	);
 }

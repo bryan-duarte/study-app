@@ -1,36 +1,168 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# AWS Preparation Quiz
+
+A Next.js application for AWS certification preparation with quiz functionality and Supabase backend integration.
+
+## Features
+
+- **65 Quiz Questions**: Comprehensive AWS certification questions
+- **Supabase Integration**: PostgreSQL backend with type-safe queries
+- **User Authentication**: Supabase Auth for progress tracking
+- **Progress Sync**: Save quiz progress across devices
+- **Analytics Tracking**: Record quiz completion and performance
+- **Error Handling**: Retry logic with exponential backoff
+- **Type-Safe**: Full TypeScript coverage with Supabase-generated types
+
+## Tech Stack
+
+- **Next.js 16.2.6** with React 19.2.4
+- **Supabase**: PostgreSQL database + Auth + Type generation
+- **Zustand**: State management with persistence
+- **Tailwind CSS v4**: Styling
+- **TypeScript**: Type safety
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
+
+- Node.js (v20+)
+- npm or pnpm
+- Supabase account (free tier works)
+
+### Installation
+
+1. Clone the repository and install dependencies:
+
+```bash
+npm install
+```
+
+2. Set up Supabase:
+
+```bash
+# Link to your Supabase project (or create a new one)
+supabase login
+supabase link --project-id YOUR_PROJECT_ID
+```
+
+3. Configure environment variables:
+
+```bash
+# Copy the example template
+cp .env.local.example .env.local
+
+# Edit with your Supabase credentials
+# Get these from: https://app.supabase.com/project/_/settings/api
+```
+
+Required environment variables:
+- `NEXT_PUBLIC_SUPABASE_URL`: Your Supabase project URL
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`: Public anon key
+- `SUPABASE_SERVICE_ROLE_KEY`: Service role key (server-only)
+
+4. Run database migrations:
+
+```bash
+# Apply the schema to your Supabase project
+supabase db push
+```
+
+5. Migrate quiz data:
+
+```bash
+# Load questions from JSON to Supabase
+npx ts-node scripts/migrate-json-to-supabase.ts
+```
+
+6. Start the development server:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) with your browser.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Database Schema
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+The application uses three tables:
 
-## Learn More
+- **questions**: Stores quiz questions with JSONB options
+- **user_progress**: Tracks user progress and answers
+- **quiz_analytics**: Records quiz completion statistics
 
-To learn more about Next.js, take a look at the following resources:
+See `supabase/migrations/` for the complete schema.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## API Routes
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- `GET /api/questions`: Fetch quiz questions with pagination
+- `POST /api/auth/signup`: User registration
+- `POST /api/auth/login`: User authentication
+- `POST /api/auth/logout`: User logout
+- `GET /api/quiz/progress`: Fetch user progress
+- `POST /api/quiz/progress`: Save user progress
+- `GET /api/quiz/analytics`: Fetch analytics history
+- `POST /api/quiz/analytics`: Record quiz completion
 
-## Deploy on Vercel
+## Architecture
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```
+Next.js App
+├── API Routes (Server-side)
+│   └── Supabase Client (Service Role)
+├── Components (Client-side)
+│   └── Zustand Store (State + Persistence)
+└── Supabase Backend
+    ├── PostgreSQL (Questions, Progress, Analytics)
+    └── Auth (User Sessions)
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Development
+
+### Generate TypeScript Types
+
+After schema changes, regenerate types:
+
+```bash
+npx supabase gen types typescript --project-id YOUR_PROJECT_ID > lib/types/supabase.ts
+```
+
+### Run Type Checking
+
+```bash
+npm run build
+```
+
+## Troubleshooting
+
+**"Missing environment variables"**
+- Ensure `.env.local` is created with all required variables
+- Restart the dev server after adding variables
+
+**"Failed to fetch questions"**
+- Check Supabase connection
+- Verify migration was run successfully
+- Check browser console for detailed errors
+
+**"TypeScript errors"**
+- Regenerate Supabase types after schema changes
+- Run `npm run build` to check for type errors
+
+## Deployment
+
+### Environment Variables
+
+Add these to your deployment platform (Vercel, Netlify, etc.):
+
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `SUPABASE_SERVICE_ROLE_KEY`
+
+### Build
+
+```bash
+npm run build
+npm start
+```
+
+## License
+
+MIT
