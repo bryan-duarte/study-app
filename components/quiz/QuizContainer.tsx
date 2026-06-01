@@ -32,6 +32,7 @@ export default function QuizContainer() {
 
 	const [isLoading, setIsLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
+	const [isValidating, setIsValidating] = useState(false);
 	const hasInitializedRef = useRef(false);
 
 	const currentQuestion = questions[currentIndex] ?? null;
@@ -42,6 +43,15 @@ export default function QuizContainer() {
 	const hasAnsweredCurrent = answers.has(currentIndex);
 	const hasNextQuestion = currentIndex < totalQuestions - 1;
 	const hasPreviousQuestion = currentIndex > 0;
+	// Check if the current answer has been validated by the server (has answeredAt timestamp)
+	const isCurrentValidated = currentSessionData?.questions[currentIndex]?.answeredAt;
+
+	const handleConfirmAnswer = async () => {
+		setIsValidating(true);
+		await confirmAnswer();
+		// Clear validating state after a short delay to ensure server response is processed
+		setTimeout(() => setIsValidating(false), 100);
+	};
 
 	// Initialize quiz session and load questions
 	useEffect(() => {
@@ -91,9 +101,10 @@ export default function QuizContainer() {
 			if ((e.key === "Enter" || (e.key === "Enter" && (e.metaKey || e.ctrlKey))) &&
 				hasAnsweredCurrent &&
 				!isCurrentConfirmed &&
-				!isSubmitting) {
+				!isSubmitting &&
+				!isValidating) {
 				e.preventDefault();
-				confirmAnswer();
+				handleConfirmAnswer();
 				return;
 			}
 
@@ -118,7 +129,7 @@ export default function QuizContainer() {
 
 		window.addEventListener("keydown", handleKeyDown);
 		return () => window.removeEventListener("keydown", handleKeyDown);
-	}, [hasAnsweredCurrent, isCurrentConfirmed, hasNextQuestion, hasPreviousQuestion, isSubmitting, confirmAnswer, nextQuestion, previousQuestion]);
+	}, [hasAnsweredCurrent, isCurrentConfirmed, hasNextQuestion, hasPreviousQuestion, isSubmitting, isValidating, confirmAnswer, nextQuestion, previousQuestion]);
 
 	if (isLoading) {
 		return (
@@ -222,7 +233,20 @@ export default function QuizContainer() {
 
 				<OptionsList options={currentQuestion.options} questionType={currentQuestion.type} />
 
-				{isCurrentConfirmed && <FeedbackCard question={currentQuestion} />}
+				{/* Show feedback skeleton while validating, show full feedback when validated */}
+				{isCurrentConfirmed && (
+					isCurrentValidated ? (
+						<FeedbackCard question={currentQuestion} />
+					) : (
+						<div
+							className="border-l-4 border-fog-grey bg-deep-slate p-6 rounded-cards shadow-subtle animate-pulse"
+							role="status"
+							aria-live="polite"
+						>
+							<p className="text-body text-fog-grey">Validating your answer...</p>
+						</div>
+					)
+				)}
 			</div>
 
 			{/* Unified Navigation Button */}
@@ -238,7 +262,7 @@ export default function QuizContainer() {
 							type="button"
 							className="px-6 py-3 bg-gunmetal hover:bg-muted-ash text-porcelain rounded-buttons transition-colors focus:outline-none focus:ring-2 focus:ring-storm-cloud focus:ring-offset-2 focus:ring-offset-pitch-black disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-gunmetal"
 							aria-label="Previous question"
-							disabled={isSubmitting}
+							disabled={isSubmitting || isValidating}
 						>
 							Previous
 						</button>
@@ -246,13 +270,13 @@ export default function QuizContainer() {
 
 					{!isCurrentConfirmed && hasAnsweredCurrent && (
 						<button
-							onClick={confirmAnswer}
+							onClick={handleConfirmAnswer}
 							type="button"
-							disabled={isSubmitting}
+							disabled={isSubmitting || isValidating}
 							className="flex-1 px-6 py-3 bg-neon-lime hover:opacity-90 text-pitch-black font-w590 rounded-buttons transition-opacity focus:outline-none focus:ring-2 focus:ring-neon-lime focus:ring-offset-2 focus:ring-offset-pitch-black disabled:opacity-50 disabled:cursor-not-allowed"
 							aria-label="Submit answer"
 						>
-							{isSubmitting ? "Validating..." : "Submit Answer"}
+							{isSubmitting || isValidating ? "Validating..." : "Submit Answer"}
 						</button>
 					)}
 
@@ -262,7 +286,7 @@ export default function QuizContainer() {
 							type="button"
 							className="flex-1 px-6 py-3 bg-neon-lime hover:opacity-90 text-pitch-black font-w590 rounded-buttons transition-opacity focus:outline-none focus:ring-2 focus:ring-neon-lime focus:ring-offset-2 focus:ring-offset-pitch-black disabled:opacity-50 disabled:cursor-not-allowed"
 							aria-label="Next question"
-							disabled={isSubmitting}
+							disabled={isSubmitting || isValidating}
 						>
 							Next Question
 						</button>

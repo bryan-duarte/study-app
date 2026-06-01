@@ -68,6 +68,10 @@ interface QuizData {
 	answeredQuestionIds: Set<string>;
 	session: SessionState;
 	selectedQuestionCount: number;
+	// Explicit counter for session progress to ensure reactivity
+	sessionAnsweredCount: number;
+	// Direct session progress value (not computed) for proper reactivity
+	sessionProgress: number;
 }
 
 interface QuizComputed {
@@ -80,7 +84,6 @@ interface QuizComputed {
 	answeredCount: number;
 	correctCount: number;
 	questionsRemaining: number;
-	sessionProgress: number;
 	sessionRemaining: number;
 	isSessionComplete: boolean;
 }
@@ -251,6 +254,8 @@ export const useQuizStore = create<QuizState>()(
 				currentSessionData: null,
 			},
 			selectedQuestionCount: DEFAULT_QUESTION_COUNT,
+			sessionAnsweredCount: 0,
+			sessionProgress: 0,
 
 			// Computed properties
 			get currentQuestion(): QuizQuestion | null {
@@ -300,21 +305,11 @@ export const useQuizStore = create<QuizState>()(
 				return newQuestions;
 			},
 
-			get sessionProgress(): number {
-				const { session, confirmedAnswers } = get();
-				// If we have active session data, use that
-				if (session.currentSessionData) {
-					return session.currentSessionData.questions.filter((q) => q.answeredAt).length;
-				}
-				// Otherwise fallback to local confirmed answers
-				return confirmedAnswers.size;
-			},
-
+			// Compute session remaining (not stored, computed on access)
 			get sessionRemaining(): number {
-				const { session } = get();
+				const { session, sessionAnsweredCount } = get();
 				const total = session.currentSessionData?.questions.length ?? DEFAULT_SESSION_QUESTION_COUNT;
-				const answered = get().sessionProgress;
-				return total - answered;
+				return total - sessionAnsweredCount;
 			},
 
 			get isSessionComplete(): boolean {
@@ -397,7 +392,7 @@ export const useQuizStore = create<QuizState>()(
 
 				set({ isSubmitting: true });
 
-				// Calculate if answer is correct
+				// Calculate if answer is correct locally for immediate feedback
 				const isMultiSelect = question.type === "multi-option";
 				const correctOptionIndices = question.options
 					.map((opt, idx) => (opt.isCorrect ? idx : -1))
@@ -430,11 +425,44 @@ export const useQuizStore = create<QuizState>()(
 					selectedOptionId = selectedOptionValue?.id ?? null;
 				}
 
+				// Update local confirmed answers immediately
 				const newConfirmedAnswers = new Map(confirmedAnswers);
+				const wasAlreadyConfirmed = newConfirmedAnswers.has(currentIndex);
 				newConfirmedAnswers.set(currentIndex, selectedOption);
-				set({ confirmedAnswers: newConfirmedAnswers, isSubmitting: false });
+
+				// Combine both updates in a single set() call for proper reactivity
+				const newCount = wasAlreadyConfirmed ? get().sessionAnsweredCount : get().sessionAnsweredCount + 1;
+				set({
+					confirmedAnswers: newConfirmedAnswers,
+					isSubmitting: false,
+					sessionAnsweredCount: newCount,
+					sessionProgress: newCount,
+				});
+
+				// Update local session data immediately for immediate progress updates
+				if (session.currentSessionData && question.id && selectedOptionId) {
+					const updatedQuestions = session.currentSessionData.questions.map((q) =>
+						q.questionId === question.id
+							? { ...q, selectedOptionId, isCorrect, answeredAt: new Date().toISOString() }
+							: q
+					);
+
+					const updatedSessionData: SessionStartResponse = {
+						sessionId: session.currentSessionData.sessionId,
+						questions: updatedQuestions,
+						totalAvailableQuestions: session.currentSessionData.totalAvailableQuestions,
+					};
+
+					set({
+						session: {
+							...session,
+							currentSessionData: updatedSessionData,
+						},
+					});
+				}
 
 				// Record session answer if session is active and we have a valid option ID
+				// This syncs with the server and may update isCorrect based on server validation
 				if (session.sessionId && selectedOptionId) {
 					await get().recordSessionAnswer(question.id, selectedOptionId);
 				}
@@ -492,6 +520,8 @@ export const useQuizStore = create<QuizState>()(
 						sessionMetrics: null,
 						currentSessionData: null,
 					},
+					sessionAnsweredCount: 0,
+					sessionProgress: 0,
 				});
 			},
 
@@ -563,12 +593,17 @@ export const useQuizStore = create<QuizState>()(
 
 					set({
 						questions: transformedQuestions,
+						answers: new Map(),
+						confirmedAnswers: new Map(),
+						currentIndex: INITIAL_QUESTION_INDEX,
 						session: {
 							...get().session,
 							questionPoolSize: sessionData.totalAvailableQuestions,
 							isQuestionExhausted: sessionData.questions.length === 0,
 							currentSessionData: sessionData,
 						},
+						sessionAnsweredCount: 0,
+						sessionProgress: 0,
 					});
 
 					// Don't shuffle - the session API already returns shuffled questions
@@ -704,16 +739,15 @@ export const useQuizStore = create<QuizState>()(
 
 					const data = await response.json();
 
-					// Update local session state with response
+					// Update local session state with server response
+					// This may update isCorrect with server-validated value
 					if (session.currentSessionData) {
 						const updatedQuestions = session.currentSessionData.questions.map((q) =>
 							q.questionId === questionId
-								? { ...q, selectedOptionId, isCorrect: data.isCorrect, answeredAt: new Date().toISOString() }
+								? { ...q, selectedOptionId, isCorrect: data.isCorrect, answeredAt: q.answeredAt || new Date().toISOString() }
 								: q
 						);
 
-						// Create a new SessionStartResponse object to ensure proper state change detection
-						// This is critical for triggering computed property recalculation in Zustand
 						const updatedSessionData: SessionStartResponse = {
 							sessionId: session.currentSessionData.sessionId,
 							questions: updatedQuestions,
@@ -845,6 +879,8 @@ export const useQuizStore = create<QuizState>()(
 				totalUniqueQuestionsAnswered: state.totalUniqueQuestionsAnswered,
 				answeredQuestionIds: Array.from(state.answeredQuestionIds),
 				selectedQuestionCount: state.selectedQuestionCount,
+				sessionAnsweredCount: state.sessionAnsweredCount,
+				sessionProgress: state.sessionProgress,
 			}),
 			onRehydrateStorage: () => (state) => {
 				if (!state) return;
@@ -875,6 +911,8 @@ export const useQuizStore = create<QuizState>()(
 					state.answeredQuestionIds as unknown as string[],
 				);
 				state.selectedQuestionCount = state.selectedQuestionCount ?? DEFAULT_QUESTION_COUNT;
+				state.sessionAnsweredCount = state.sessionAnsweredCount ?? 0;
+				state.sessionProgress = state.sessionProgress ?? 0;
 				state.session = {
 					sessionId: null,
 					sessionQuestions: new Map(),

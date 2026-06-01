@@ -14,6 +14,8 @@
 /coverage
 /test-results
 /playwright-report
+test-execution-report.md
+test-report*.md
 
 # next.js
 /.next/
