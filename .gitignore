@@ -42,3 +42,10 @@ next-env.d.ts
 
 # docs (plans, generated documentation)
 /docs
+
+# images (screenshots, temporary visuals)
+*.png
+
+# playwright-mcp (logs, snapshots)
+.playwright-mcp/
+*.log
