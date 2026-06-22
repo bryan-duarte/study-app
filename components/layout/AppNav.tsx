@@ -12,13 +12,13 @@ const LINKS = [
 ];
 
 /**
- * Slim top navigation for the secondary "explore your progress" screens.
- * Intentionally hidden on the home hero and the focused quiz flow so those
- * keep their full-bleed layouts.
+ * Slim top navigation for the secondary "explore your progress" screens
+ * and the quiz results page. Intentionally hidden on the home hero and the
+ * active quiz flow so those keep their full-bleed layouts.
  */
 export default function AppNav() {
   const pathname = usePathname();
-  if (pathname === "/" || pathname.startsWith("/quiz")) return null;
+  if (pathname === "/" || pathname === "/quiz") return null;
 
   return (
     <header className="sticky top-0 z-30 border-b border-charcoal-grey/70 bg-pitch-black/80 backdrop-blur-md">
