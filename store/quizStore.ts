@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { QuizQuestion } from "@/lib/transformers/question";
-import type { SessionQuestion, SessionStartResponse } from "@/types/quiz";
+import type { SessionQuestion, SessionStartResponse, SessionMode } from "@/types/quiz";
 import { fetchWithTimeout, isTimeoutError } from "@/lib/fetch";
 
 // Constants
@@ -40,6 +40,13 @@ interface SessionState {
 	currentSessionData: SessionStartResponse | null;
 }
 
+/** How the next session's questions should be selected. */
+interface SessionConfig {
+	mode: SessionMode;
+	domains: string[];
+	topics: string[];
+}
+
 interface PaginationState {
 	currentPage: number;
 	totalPages: number;
@@ -67,6 +74,7 @@ interface QuizData {
 	totalUniqueQuestionsAnswered: number;
 	answeredQuestionIds: Set<string>;
 	session: SessionState;
+	sessionConfig: SessionConfig;
 	selectedQuestionCount: number;
 	// Explicit counter for session progress to ensure reactivity
 	sessionAnsweredCount: number;
@@ -91,7 +99,7 @@ interface QuizComputed {
 interface QuizActions {
 	loadQuestions: (questions: QuizQuestion[]) => void;
 	loadQuestionsPage: (page: number, limit?: number) => Promise<void>;
-	loadSessionQuestions: (userId?: string, questionCount?: number) => Promise<void>;
+	loadSessionQuestions: (userId?: string, questionCount?: number, config?: SessionConfig) => Promise<void>;
 	selectOption: (optionIndex: number) => void;
 	toggleOption: (optionIndex: number) => void;
 	confirmAnswer: () => void;
@@ -104,7 +112,8 @@ interface QuizActions {
 	loadProgress: () => Promise<void>;
 	enableAutoSync: () => void;
 	disableAutoSync: () => void;
-	startSession: (userId?: string, questionCount?: number) => Promise<SessionStartResponse | null>;
+	startSession: (userId?: string, questionCount?: number, config?: SessionConfig) => Promise<SessionStartResponse | null>;
+	setSessionConfig: (config: Partial<SessionConfig>) => void;
 	recordSessionAnswer: (questionId: string, selectedOptionId: string) => Promise<void>;
 	getSessionMetrics: () => SessionMetrics | null;
 	handleSessionComplete: () => Promise<void>;
@@ -254,6 +263,7 @@ export const useQuizStore = create<QuizState>()(
 				currentSessionData: null,
 			},
 			selectedQuestionCount: DEFAULT_QUESTION_COUNT,
+			sessionConfig: { mode: "standard", domains: [], topics: [] },
 			sessionAnsweredCount: 0,
 			sessionProgress: 0,
 
@@ -571,9 +581,9 @@ export const useQuizStore = create<QuizState>()(
 				}
 			},
 
-			loadSessionQuestions: async (userId?: string, questionCount?: number) => {
+			loadSessionQuestions: async (userId?: string, questionCount?: number, config?: SessionConfig) => {
 				try {
-					const sessionData = await get().startSession(userId, questionCount);
+					const sessionData = await get().startSession(userId, questionCount, config);
 					if (!sessionData) {
 						throw new Error("Failed to start session");
 					}
@@ -586,7 +596,7 @@ export const useQuizStore = create<QuizState>()(
 						options: sq.question.options.map((opt) => ({
 							id: opt.id,
 							description: opt.description,
-							isCorrect: opt.is_correct,
+							isCorrect: opt.isCorrect,
 							reasoning: opt.reasoning,
 						})),
 					}));
@@ -687,13 +697,20 @@ export const useQuizStore = create<QuizState>()(
 			},
 
 			// Session actions
-			startSession: async (userId?: string, questionCount?: number) => {
+			startSession: async (userId?: string, questionCount?: number, config?: SessionConfig) => {
 				try {
 					const count = questionCount ?? get().selectedQuestionCount;
+					const cfg = config ?? get().sessionConfig;
 					const response = await fetchWithTimeout("/api/quiz/session/start", {
 						method: "POST",
 						headers: { "Content-Type": "application/json" },
-						body: JSON.stringify({ user_id: userId, question_count: count }),
+						body: JSON.stringify({
+							user_id: userId,
+							question_count: count,
+							mode: cfg.mode,
+							domains: cfg.domains,
+							topics: cfg.topics,
+						}),
 					});
 
 					if (!response.ok) {
@@ -861,6 +878,10 @@ export const useQuizStore = create<QuizState>()(
 				}
 				set({ selectedQuestionCount: count });
 			},
+
+			setSessionConfig: (config: Partial<SessionConfig>) => {
+				set({ sessionConfig: { ...get().sessionConfig, ...config } });
+			},
 		}),
 		{
 			name: "quiz-storage",
@@ -879,6 +900,7 @@ export const useQuizStore = create<QuizState>()(
 				totalUniqueQuestionsAnswered: state.totalUniqueQuestionsAnswered,
 				answeredQuestionIds: Array.from(state.answeredQuestionIds),
 				selectedQuestionCount: state.selectedQuestionCount,
+				sessionConfig: state.sessionConfig,
 				sessionAnsweredCount: state.sessionAnsweredCount,
 				sessionProgress: state.sessionProgress,
 			}),
@@ -911,6 +933,7 @@ export const useQuizStore = create<QuizState>()(
 					state.answeredQuestionIds as unknown as string[],
 				);
 				state.selectedQuestionCount = state.selectedQuestionCount ?? DEFAULT_QUESTION_COUNT;
+				state.sessionConfig = state.sessionConfig ?? { mode: "standard", domains: [], topics: [] };
 				state.sessionAnsweredCount = state.sessionAnsweredCount ?? 0;
 				state.sessionProgress = state.sessionProgress ?? 0;
 				state.session = {

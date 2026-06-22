@@ -115,28 +115,11 @@
   --font-weight-w510: 510;
   --font-weight-w590: 590;
 
-  /* Spacing - 4px base unit */
-  --spacing-4: 4px;
-  --spacing-8: 8px;
-  --spacing-12: 12px;
-  --spacing-16: 16px;
-  --spacing-20: 20px;
-  --spacing-24: 24px;
-  --spacing-28: 28px;
-  --spacing-32: 32px;
-  --spacing-36: 36px;
-  --spacing-40: 40px;
-  --spacing-48: 48px;
-  --spacing-56: 56px;
-  --spacing-64: 64px;
-  --spacing-80: 80px;
-  --spacing-96: 96px;
-  --spacing-128: 128px;
-
-  /* Layout */
-  --section-gap: 24px;
-  --card-padding: 12px;
-  --element-gap: 8px;
+  /* Spacing — intentionally NOT overridden.
+     Defining --spacing-<n> tokens here would hijack Tailwind's spacing
+     utilities (p-4, gap-4, h-4…) because DESIGN.md's naming (spacing-4 = 4px)
+     conflicts with Tailwind's multiplier (p-4 = 16px). We keep Tailwind's
+     default dynamic scale, which the components are written against. */
 
   /* Border Radius */
   --radius-pill: 9999px;
@@ -182,11 +165,45 @@
 }
 
 body {
-	background: var(--background);
+	background-color: var(--background);
+	background-image:
+		radial-gradient(900px 480px at 50% -8%, rgba(228, 242, 34, 0.06), transparent 60%),
+		radial-gradient(720px 520px at 100% 0%, rgba(94, 106, 210, 0.07), transparent 55%),
+		radial-gradient(620px 620px at 0% 28%, rgba(99, 102, 241, 0.045), transparent 60%);
+	background-attachment: fixed;
 	color: var(--foreground);
 	font-family: var(--font-inter-variable);
 	-webkit-font-smoothing: antialiased;
 	-moz-osx-font-smoothing: grayscale;
+	position: relative;
+	min-height: 100vh;
+}
+
+/* Faded dot-grid "control panel" texture, masked toward the top so it never competes with content */
+body::before {
+	content: "";
+	position: fixed;
+	inset: 0;
+	z-index: 0;
+	pointer-events: none;
+	background-image: radial-gradient(circle, rgba(247, 248, 248, 0.035) 1px, transparent 1px);
+	background-size: 26px 26px;
+	-webkit-mask-image: radial-gradient(ellipse 75% 55% at 50% 0%, #000 25%, transparent 72%);
+	mask-image: radial-gradient(ellipse 75% 55% at 50% 0%, #000 25%, transparent 72%);
+}
+
+/* Keep all page content above the fixed texture layer */
+body > * {
+	position: relative;
+	z-index: 1;
+}
+
+/* Safe-area helpers for notched/mobile devices (requires viewport-fit=cover) */
+.pb-safe {
+	padding-bottom: max(env(safe-area-inset-bottom), 1rem);
+}
+.pt-safe {
+	padding-top: max(env(safe-area-inset-top), 0px);
 }
 
 /* Typography utilities */
@@ -255,4 +272,102 @@ body {
 
 .font-w590 {
 	font-weight: var(--font-weight-w590);
+}
+
+/* ============================================================
+   Motion — CSS-only animation library
+   Tasteful, Linear-grade micro-interactions without a dependency.
+   ============================================================ */
+@keyframes fade-in-up {
+	from {
+		opacity: 0;
+		transform: translate3d(0, 12px, 0);
+	}
+	to {
+		opacity: 1;
+		transform: translate3d(0, 0, 0);
+	}
+}
+
+@keyframes fade-in {
+	from {
+		opacity: 0;
+	}
+	to {
+		opacity: 1;
+	}
+}
+
+@keyframes scale-in {
+	from {
+		opacity: 0;
+		transform: scale(0.96);
+	}
+	to {
+		opacity: 1;
+		transform: scale(1);
+	}
+}
+
+@keyframes slide-down {
+	from {
+		opacity: 0;
+		transform: translate3d(0, -10px, 0);
+	}
+	to {
+		opacity: 1;
+		transform: translate3d(0, 0, 0);
+	}
+}
+
+@keyframes shimmer {
+	100% {
+		transform: translateX(100%);
+	}
+}
+
+.animate-fade-in-up {
+	animation: fade-in-up 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.animate-fade-in {
+	animation: fade-in 0.5s ease both;
+}
+
+.animate-scale-in {
+	animation: scale-in 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.animate-slide-down {
+	animation: slide-down 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Shimmering skeleton sweep */
+.shimmer {
+	position: relative;
+	overflow: hidden;
+}
+.shimmer::after {
+	content: "";
+	position: absolute;
+	inset: 0;
+	transform: translateX(-100%);
+	background: linear-gradient(
+		90deg,
+		transparent,
+		rgba(247, 248, 248, 0.05),
+		transparent
+	);
+	animation: shimmer 1.6s infinite;
+}
+
+/* Honor users who prefer reduced motion */
+@media (prefers-reduced-motion: reduce) {
+	*,
+	*::before,
+	*::after {
+		animation-duration: 0.001ms !important;
+		animation-iteration-count: 1 !important;
+		transition-duration: 0.001ms !important;
+	}
 }

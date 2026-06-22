@@ -15,15 +15,17 @@ export default function ProgressBar({
 	sessionProgress = 0,
 	sessionTotal = 25,
 }: ProgressBarProps) {
-	const progressLabel = `Question ${current} of ${total}`;
 	const percentageLabel = `${Math.round(progress)}% complete`;
 	const sessionLabel = `Session Progress: ${sessionProgress}/${sessionTotal}`;
 
 	return (
 		<div className="w-full" role="region" aria-label="Quiz progress">
-			<div className="flex items-center justify-between mb-2">
+			<div className="mb-2 flex items-center justify-between">
 				<span className="text-caption font-w510 text-storm-cloud">
-					{progressLabel}
+					<span className="font-mono text-light-steel">
+						{String(current).padStart(2, "0")}
+					</span>
+					<span className="text-fog-grey"> / {total}</span>
 				</span>
 				<span
 					className="text-caption font-regular text-fog-grey"
@@ -34,7 +36,7 @@ export default function ProgressBar({
 			</div>
 
 			<div
-				className="w-full h-2 bg-deep-slate rounded-full overflow-hidden border border-charcoal-grey mb-2"
+				className="relative mb-3 h-1.5 w-full overflow-hidden rounded-full border border-charcoal-grey bg-deep-slate shadow-[inset_0_1px_2px_rgba(0,0,0,0.5)]"
 				role="progressbar"
 				aria-valuenow={Math.round(progress)}
 				aria-valuemin={0}
@@ -42,9 +44,14 @@ export default function ProgressBar({
 				aria-label={percentageLabel}
 			>
 				<div
-					className="h-full bg-neon-lime transition-all duration-300 ease-out"
+					className="relative h-full rounded-full bg-neon-lime transition-all duration-500 ease-out"
 					style={{ width: `${progress}%` }}
-				/>
+				>
+					<div
+						className="absolute inset-y-0 right-0 w-10 rounded-full bg-gradient-to-r from-transparent to-white/50"
+						aria-hidden
+					/>
+				</div>
 			</div>
 
 			{/* Session Progress Indicator */}
@@ -61,7 +68,7 @@ export default function ProgressBar({
 			</div>
 
 			<div
-				className="w-full h-1 bg-deep-slate rounded-full overflow-hidden mt-1"
+				className="mt-1 h-1 w-full overflow-hidden rounded-full bg-deep-slate"
 				role="progressbar"
 				aria-valuenow={sessionProgress}
 				aria-valuemin={0}
@@ -69,7 +76,7 @@ export default function ProgressBar({
 				aria-label={`Session progress: ${sessionProgress} of ${sessionTotal} questions answered`}
 			>
 				<div
-					className="h-full bg-emerald transition-all duration-300 ease-out"
+					className="h-full rounded-full bg-emerald transition-all duration-500 ease-out"
 					style={{ width: `${(sessionProgress / sessionTotal) * 100}%` }}
 				/>
 			</div>

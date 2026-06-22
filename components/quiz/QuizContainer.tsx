@@ -135,11 +135,38 @@ export default function QuizContainer() {
 	if (isLoading) {
 		return (
 			<div
-				className="flex items-center justify-center min-h-[400px]"
+				className="mx-auto w-full max-w-3xl p-6 pb-24 md:pb-6"
 				role="status"
 				aria-live="polite"
 			>
-				<p className="text-fog-grey">Loading quiz...</p>
+				{/* Progress skeleton */}
+				<div className="mb-2 flex justify-between">
+					<div className="h-3 w-24 rounded-full bg-deep-slate" />
+					<div className="h-3 w-16 rounded-full bg-deep-slate" />
+				</div>
+				<div className="shimmer mb-8 h-1.5 w-full rounded-full bg-deep-slate" />
+
+				{/* Question skeleton */}
+				<div className="mb-6 rounded-cards border border-charcoal-grey/60 bg-graphite/60 p-6">
+					<div className="mb-3 h-5 w-24 rounded-badges bg-charcoal-grey" />
+					<div className="mb-3 h-4 w-3/4 rounded bg-deep-slate" />
+					<div className="mb-3 h-4 w-2/3 rounded bg-deep-slate" />
+					<div className="h-4 w-1/2 rounded bg-deep-slate" />
+				</div>
+
+				{/* Options skeleton */}
+				<div className="space-y-3">
+					{[0, 1, 2, 3].map((i) => (
+						<div
+							key={i}
+							className="flex items-center gap-3 rounded-cards border border-charcoal-grey/50 bg-deep-slate/50 p-4"
+						>
+							<div className="h-6 w-6 rounded-badges bg-charcoal-grey" />
+							<div className="h-4 flex-1 rounded bg-charcoal-grey/60" />
+						</div>
+					))}
+				</div>
+				<span className="sr-only">Loading quiz…</span>
 			</div>
 		);
 	}
@@ -151,11 +178,11 @@ export default function QuizContainer() {
 				role="alert"
 				aria-live="assertive"
 			>
-				<p className="text-red-400">Failed to load quiz: {error}</p>
+				<p className="text-warning-red">Failed to load quiz: {error}</p>
 				<button
 					onClick={() => window.location.reload()}
 					type="button"
-					className="px-4 py-2 bg-neon-lime text-black rounded hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+					className="rounded-buttons bg-neon-lime px-4 py-2 text-pitch-black transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_10px_30px_-8px_rgba(228,242,34,0.55)]"
 				>
 					Retry
 				</button>
@@ -226,7 +253,7 @@ export default function QuizContainer() {
 				sessionTotal={sessionTotal}
 			/>
 
-			<div className="mt-8 space-y-6">
+			<div key={currentIndex} className="mt-8 space-y-6 animate-fade-in-up">
 				<QuestionCard
 					question={currentQuestion.title}
 					questionType={currentQuestion.type}
@@ -240,11 +267,12 @@ export default function QuizContainer() {
 						<FeedbackCard question={currentQuestion} />
 					) : (
 						<div
-							className="border-l-4 border-fog-grey bg-deep-slate p-6 rounded-cards shadow-subtle animate-pulse"
+							className="animate-slide-down flex items-center gap-3 rounded-cards border-l-[3px] border-l-fog-grey bg-deep-slate/80 p-6 backdrop-blur-sm"
 							role="status"
 							aria-live="polite"
 						>
-							<p className="text-body text-fog-grey">Validating your answer...</p>
+							<span className="h-4 w-4 animate-spin rounded-full border-2 border-fog-grey border-t-light-steel" />
+							<p className="text-body text-storm-cloud">Validating your answer…</p>
 						</div>
 					)
 				)}
@@ -253,7 +281,7 @@ export default function QuizContainer() {
 			{/* Unified Navigation Button */}
 			<div
 				className={cn(
-					"fixed bottom-0 left-0 right-0 p-4 pb-safe bg-pitch-black border-t border-charcoal-grey md:static md:border-t-0 md:bg-transparent md:p-0 md:mt-6",
+					"fixed bottom-0 left-0 right-0 border-t border-charcoal-grey bg-pitch-black/80 p-4 pb-safe backdrop-blur-xl md:static md:border-t-0 md:bg-transparent md:p-0 md:mt-6 md:backdrop-blur-none",
 				)}
 			>
 				<div className="max-w-3xl mx-auto flex gap-3">
@@ -261,7 +289,7 @@ export default function QuizContainer() {
 						<button
 							onClick={previousQuestion}
 							type="button"
-							className="px-6 py-3 bg-gunmetal hover:bg-muted-ash text-porcelain rounded-buttons transition-colors focus:outline-none focus:ring-2 focus:ring-storm-cloud focus:ring-offset-2 focus:ring-offset-pitch-black disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-gunmetal"
+							className="px-6 py-3.5 rounded-buttons border border-charcoal-grey bg-gunmetal text-porcelain transition-all duration-200 ease-out hover:-translate-y-0.5 hover:bg-muted-ash hover:border-muted-ash focus:outline-none focus-visible:ring-2 focus-visible:ring-storm-cloud focus-visible:ring-offset-2 focus-visible:ring-offset-pitch-black disabled:pointer-events-none disabled:opacity-50"
 							aria-label="Previous question"
 							disabled={isSubmitting || isValidating}
 						>
@@ -274,10 +302,10 @@ export default function QuizContainer() {
 							onClick={handleConfirmAnswer}
 							type="button"
 							disabled={isSubmitting || isValidating}
-							className="flex-1 px-6 py-3 bg-neon-lime hover:opacity-90 text-pitch-black font-w590 rounded-buttons transition-opacity focus:outline-none focus:ring-2 focus:ring-neon-lime focus:ring-offset-2 focus:ring-offset-pitch-black disabled:opacity-50 disabled:cursor-not-allowed"
+							className="flex-1 px-6 py-3.5 rounded-buttons bg-neon-lime text-pitch-black font-w590 transition-all duration-200 ease-out hover:-translate-y-0.5 hover:shadow-[0_0_0_1px_rgba(228,242,34,0.35),0_10px_30px_-8px_rgba(228,242,34,0.55)] focus:outline-none focus-visible:ring-2 focus-visible:ring-neon-lime focus-visible:ring-offset-2 focus-visible:ring-offset-pitch-black disabled:pointer-events-none disabled:opacity-50"
 							aria-label="Submit answer"
 						>
-							{isSubmitting || isValidating ? "Validating..." : "Submit Answer"}
+							{isSubmitting || isValidating ? "Validating…" : "Submit Answer"}
 						</button>
 					)}
 
@@ -285,7 +313,7 @@ export default function QuizContainer() {
 						<button
 							onClick={nextQuestion}
 							type="button"
-							className="flex-1 px-6 py-3 bg-neon-lime hover:opacity-90 text-pitch-black font-w590 rounded-buttons transition-opacity focus:outline-none focus:ring-2 focus:ring-neon-lime focus:ring-offset-2 focus:ring-offset-pitch-black disabled:opacity-50 disabled:cursor-not-allowed"
+							className="flex-1 px-6 py-3.5 rounded-buttons bg-neon-lime text-pitch-black font-w590 transition-all duration-200 ease-out hover:-translate-y-0.5 hover:shadow-[0_0_0_1px_rgba(228,242,34,0.35),0_10px_30px_-8px_rgba(228,242,34,0.55)] focus:outline-none focus-visible:ring-2 focus-visible:ring-neon-lime focus-visible:ring-offset-2 focus-visible:ring-offset-pitch-black disabled:pointer-events-none disabled:opacity-50"
 							aria-label="Next question"
 							disabled={isSubmitting || isValidating}
 						>
@@ -297,7 +325,7 @@ export default function QuizContainer() {
 						<button
 							onClick={() => router.push("/quiz/results")}
 							type="button"
-							className="flex-1 px-6 py-3 bg-neon-lime hover:opacity-90 text-pitch-black font-w590 rounded-buttons transition-opacity focus:outline-none focus:ring-2 focus:ring-neon-lime focus:ring-offset-2 focus:ring-offset-pitch-black disabled:opacity-50 disabled:cursor-not-allowed"
+							className="flex-1 px-6 py-3.5 rounded-buttons bg-neon-lime text-pitch-black font-w590 transition-all duration-200 ease-out hover:-translate-y-0.5 hover:shadow-[0_0_0_1px_rgba(228,242,34,0.35),0_10px_30px_-8px_rgba(228,242,34,0.55)] focus:outline-none focus-visible:ring-2 focus-visible:ring-neon-lime focus-visible:ring-offset-2 focus-visible:ring-offset-pitch-black disabled:pointer-events-none disabled:opacity-50"
 							aria-label="View results"
 						>
 							View Results
@@ -305,8 +333,8 @@ export default function QuizContainer() {
 					)}
 				</div>
 
-				{/* Keyboard shortcuts hint */}
-				<div className="max-w-3xl mx-auto mt-3 text-center md:hidden">
+				{/* Keyboard shortcuts hint (desktop only — mobile has no keyboard) */}
+				<div className="max-w-3xl mx-auto mt-3 hidden text-center md:block">
 					<p className="text-xs text-storm-cloud">
 						{!isCurrentConfirmed && hasAnsweredCurrent
 							? "Press Enter to submit"

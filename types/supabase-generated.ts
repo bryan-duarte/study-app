@@ -12,55 +12,39 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "14.5"
   }
-  graphql_public: {
-    Tables: {
-      [_ in never]: never
-    }
-    Views: {
-      [_ in never]: never
-    }
-    Functions: {
-      graphql: {
-        Args: {
-          extensions?: Json
-          operationName?: string
-          query?: string
-          variables?: Json
-        }
-        Returns: Json
-      }
-    }
-    Enums: {
-      [_ in never]: never
-    }
-    CompositeTypes: {
-      [_ in never]: never
-    }
-  }
   public: {
     Tables: {
       questions: {
         Row: {
           created_at: string | null
+          difficulty: string | null
+          domain: string | null
           id: string
           options: Json
           title: string
+          topic: string | null
           type: string
           updated_at: string | null
         }
         Insert: {
           created_at?: string | null
+          difficulty?: string | null
+          domain?: string | null
           id?: string
           options: Json
           title: string
+          topic?: string | null
           type: string
           updated_at?: string | null
         }
         Update: {
           created_at?: string | null
+          difficulty?: string | null
+          domain?: string | null
           id?: string
           options?: Json
           title?: string
+          topic?: string | null
           type?: string
           updated_at?: string | null
         }
@@ -230,27 +214,36 @@ export type Database = {
       user_question_history: {
         Row: {
           created_at: string | null
+          first_answered_at: string
           id: string
+          is_correct: boolean | null
           last_answered_at: string | null
           question_id: string
+          selected_option_id: string | null
           times_answered: number
           updated_at: string | null
           user_id: string
         }
         Insert: {
           created_at?: string | null
+          first_answered_at?: string
           id?: string
+          is_correct?: boolean | null
           last_answered_at?: string | null
           question_id: string
+          selected_option_id?: string | null
           times_answered?: number
           updated_at?: string | null
           user_id: string
         }
         Update: {
           created_at?: string | null
+          first_answered_at?: string
           id?: string
+          is_correct?: boolean | null
           last_answered_at?: string | null
           question_id?: string
+          selected_option_id?: string | null
           times_answered?: number
           updated_at?: string | null
           user_id?: string
@@ -270,7 +263,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      record_user_question_answer: {
+        Args: {
+          p_is_correct: boolean
+          p_question_id: string
+          p_selected_option_id: string
+          p_user_id: string
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never
@@ -399,9 +400,6 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
-  graphql_public: {
-    Enums: {},
-  },
   public: {
     Enums: {},
   },

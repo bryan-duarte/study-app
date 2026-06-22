@@ -26,20 +26,20 @@ export default function OptionItem({
 	const optionLabel = String.fromCharCode(65 + index);
 
 	const baseClasses =
-		"w-full text-left p-4 rounded-cards border-2 transition-all relative";
+		"w-full text-left p-4 rounded-cards border transition-all duration-200 active:scale-[0.99] relative";
 
 	// Determine the visual state
 	const stateClasses = showResult
 		? isCorrect
-			? "border-forest-green bg-forest-green/20"
+			? "border-forest-green bg-forest-green/[0.12]"
 			: isSelected
-				? "border-warning-red bg-warning-red/20"
+				? "border-warning-red bg-warning-red/[0.12]"
 				: shouldShowCorrect
-					? "border-emerald bg-emerald/10 border-dashed"
-					: "border-charcoal-grey bg-deep-slate opacity-50"
+					? "border-emerald/60 border-dashed bg-emerald/[0.06]"
+					: "border-charcoal-grey bg-deep-slate/60 opacity-50"
 		: isSelected
-			? "border-neon-lime bg-neon-lime/10"
-			: "border-charcoal-grey bg-deep-slate hover:border-muted-ash hover:bg-gunmetal";
+			? "border-neon-lime bg-neon-lime/[0.08] shadow-[0_0_0_1px_rgba(228,242,34,0.2),0_8px_24px_-12px_rgba(228,242,34,0.4)]"
+			: "border-charcoal-grey bg-deep-slate/60 hover:-translate-y-0.5 hover:border-muted-ash hover:bg-gunmetal/50";
 
 	const disabledClasses = disabled ? "cursor-not-allowed" : "cursor-pointer";
 
@@ -55,10 +55,10 @@ export default function OptionItem({
 			aria-disabled={disabled}
 			aria-label={`Option ${optionLabel}: ${description}`}
 		>
-			<div className="flex gap-3 items-start">
+			<div className="flex items-start gap-3">
 				{/* Option letter indicator */}
 				<span
-					className={`font-mono flex-shrink-0 w-6 h-6 flex items-center justify-center rounded-badges text-xs font-semibold ${
+					className={`flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-badges font-mono text-xs font-semibold transition-colors ${
 						showResult && isCorrect
 							? "bg-forest-green text-pitch-black"
 							: showResult && isSelected && !isCorrect
@@ -73,26 +73,28 @@ export default function OptionItem({
 					{optionLabel}
 				</span>
 
-				<p className={`text-option flex-1 ${
-					showResult && isCorrect
-						? "text-forest-green font-medium"
-						: showResult && isSelected && !isCorrect
-							? "text-warning-red"
-							: showResult && shouldShowCorrect
-								? "text-emerald/80"
-								: "text-porcelain"
-				}`}>
+				<p
+					className={`flex-1 text-option ${
+						showResult && isCorrect
+							? "font-medium text-forest-green"
+							: showResult && isSelected && !isCorrect
+								? "text-warning-red"
+								: showResult && shouldShowCorrect
+									? "text-emerald/80"
+									: "text-porcelain"
+					}`}
+				>
 					{description}
 				</p>
 
 				{/* Result indicator icons */}
 				{showResult && isCorrect && (
 					<div
-						className="flex-shrink-0 w-6 h-6 flex items-center justify-center rounded-full bg-forest-green"
+						className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-forest-green"
 						aria-label="Correct answer"
 					>
 						<svg
-							className="w-4 h-4 text-pitch-black"
+							className="h-4 w-4 text-pitch-black"
 							fill="none"
 							stroke="currentColor"
 							viewBox="0 0 24 24"
@@ -108,11 +110,11 @@ export default function OptionItem({
 				)}
 				{showResult && isSelected && !isCorrect && (
 					<div
-						className="flex-shrink-0 w-6 h-6 flex items-center justify-center rounded-full bg-warning-red"
+						className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-warning-red"
 						aria-label="Incorrect answer"
 					>
 						<svg
-							className="w-4 h-4 text-pitch-black"
+							className="h-4 w-4 text-pitch-black"
 							fill="none"
 							stroke="currentColor"
 							viewBox="0 0 24 24"
@@ -128,11 +130,11 @@ export default function OptionItem({
 				)}
 				{showResult && shouldShowCorrect && !isSelected && (
 					<div
-						className="flex-shrink-0 w-6 h-6 flex items-center justify-center rounded-full border border-emerald/50"
+						className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full border border-emerald/50"
 						aria-label="Missed correct answer"
 					>
 						<svg
-							className="w-4 h-4 text-emerald/70"
+							className="h-4 w-4 text-emerald/70"
 							fill="none"
 							stroke="currentColor"
 							viewBox="0 0 24 24"

@@ -42,19 +42,38 @@ export default function MistakeCard({
   const questionNumber = questionIndex + 1;
 
   return (
-    <div className="bg-deep-slate border border-warning-red/30 rounded-cards p-4 shadow-sm">
-      <div className="flex items-start gap-3 mb-3">
-        <span className="text-warning-red">✗</span>
-        <h3 className="font-w510 text-porcelain">Question {questionNumber}</h3>
+    <div className="rounded-cards border border-warning-red/25 bg-deep-slate/70 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)] backdrop-blur-sm">
+      <div className="mb-3 flex items-center gap-2">
+        <span
+          className="flex h-5 w-5 items-center justify-center rounded-badges bg-warning-red/20 text-warning-red"
+          aria-hidden
+        >
+          <svg
+            className="h-3 w-3"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            strokeWidth="3"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M6 18L18 6M6 6l12 12"
+            />
+          </svg>
+        </span>
+        <h3 className="font-mono text-caption font-w510 uppercase tracking-wider text-storm-cloud">
+          Question {questionNumber}
+        </h3>
       </div>
 
-      <div className="text-light-steel mb-4 [&_h1]:text-question [&_h2]:text-question [&_p]:text-body [&_p]:text-light-steel [&_strong]:font-w510">
+      <div className="mb-4 text-light-steel [&_h1]:text-question [&_h2]:text-question [&_p]:text-body [&_p]:text-light-steel [&_strong]:font-w510">
         <MarkdownRenderer content={question.title} />
       </div>
 
       <div className="space-y-2 text-body">
         <div className="flex gap-2">
-          <span className="text-warning-red font-w510">Your answer:</span>
+          <span className="font-w510 text-warning-red">Your answer:</span>
           <span className="text-storm-cloud">
             {selectedOptions.map((opt) => opt.description).join(", ")}
           </span>
@@ -62,7 +81,7 @@ export default function MistakeCard({
 
         {correctOptions.length > 0 && (
           <div className="flex gap-2">
-            <span className="text-emerald font-w510">Correct answer:</span>
+            <span className="font-w510 text-emerald">Correct answer:</span>
             <span className="text-storm-cloud">
               {correctOptions.map((opt) => opt.description).join(", ")}
             </span>
@@ -71,8 +90,10 @@ export default function MistakeCard({
       </div>
 
       {correctOptions[0]?.reasoning && (
-        <div className="mt-4 p-3 bg-pitch-black rounded-buttons">
-          <p className="text-caption text-fog-grey mb-1">Explanation:</p>
+        <div className="mt-4 rounded-buttons border border-charcoal-grey/60 bg-pitch-black/60 p-3">
+          <p className="mb-1 text-caption font-w510 uppercase tracking-wider text-fog-grey">
+            Explanation
+          </p>
           <div className="text-body text-storm-cloud">
             <MarkdownRenderer content={correctOptions[0].reasoning} />
           </div>

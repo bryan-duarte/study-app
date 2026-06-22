@@ -7,7 +7,7 @@ import ResultsScreen from "@/components/results/ResultsScreen";
 
 export default function ResultsPage() {
   return (
-    <main className="min-h-screen bg-pitch-black">
+    <main className="min-h-screen">
       <ResultsScreen />
     </main>
   );

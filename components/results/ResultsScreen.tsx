@@ -43,7 +43,6 @@ export default function ResultsScreen() {
 	}
 
 	const totalUniqueAnswered = sessionMetrics?.totalUniqueQuestionsAnswered ?? totalUniqueQuestionsAnswered;
-	const exhaustedCount = currentSessionData?.exhaustedCount ?? answeredQuestionIds.size;
 	const totalAvailable = currentSessionData?.totalAvailableQuestions ?? (65 - answeredQuestionIds.size);
 
 	const mistakes = Array.from(confirmedAnswers.entries())
@@ -91,69 +90,90 @@ export default function ResultsScreen() {
 		window.location.href = "/quiz";
 	};
 
+	const metrics = [
+		{ label: "Correct", value: sessionCorrectCount, color: "text-emerald" },
+		{
+			label: "Incorrect",
+			value: questionsAnswered - sessionCorrectCount,
+			color: "text-warning-red",
+		},
+		{ label: "Unique", value: totalUniqueAnswered, color: "text-neon-lime" },
+		{
+			label: "Sessions",
+			value: sessionsCompleted + 1,
+			color: "text-light-steel",
+		},
+	];
+
 	return (
-		<div className="flex flex-col gap-6 p-4 md:p-6 max-w-3xl mx-auto">
+		<div className="mx-auto flex max-w-3xl flex-col gap-6 px-4 py-10 md:px-6">
 			{/* Session Summary Card */}
-			<div className="bg-graphite border border-charcoal-grey rounded-cards p-6 text-center shadow-sm">
-				<h1 className="text-heading font-w590 text-porcelain mb-4">
-					{QUIZ_COMPLETE_TITLE}
-				</h1>
+			<div className="animate-fade-in-up relative overflow-hidden rounded-cards border border-charcoal-grey/70 bg-graphite/80 p-6 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.03),0_12px_32px_-16px_rgba(0,0,0,0.7)] backdrop-blur-sm sm:p-8">
+				<div
+					aria-hidden
+					className="pointer-events-none absolute -top-24 left-1/2 h-56 w-56 -translate-x-1/2 rounded-full bg-neon-lime/[0.08] blur-3xl"
+				/>
 
-				<div className="text-heading-lg font-w590 text-neon-lime mb-2">
-					{percentage}%
-				</div>
+				<div className="relative">
+					<p className="mb-3 text-caption font-w510 uppercase tracking-[0.16em] text-fog-grey">
+						Quiz Results
+					</p>
+					<h1 className="text-heading font-w590 text-porcelain mb-6">
+						{QUIZ_COMPLETE_TITLE}
+					</h1>
 
-				<p className="text-storm-cloud mb-6">
-					{correctAnswers} of {totalQuestions} correct
-				</p>
+					<div className="animate-scale-in mb-2 inline-flex items-baseline gap-1">
+						<span className="text-[clamp(3.5rem,12vw,5.5rem)] font-w590 leading-none text-neon-lime drop-shadow-[0_0_24px_rgba(228,242,34,0.35)]">
+							{percentage}
+						</span>
+						<span className="text-2xl font-w510 text-neon-lime/70">%</span>
+					</div>
 
-				{/* Session Metrics */}
-				<div className="grid grid-cols-2 gap-4 mb-6">
-					<div className="bg-deep-slate rounded p-3">
-						<div className="text-body font-w590 text-emerald mb-1">
-							{sessionCorrectCount}
-						</div>
-						<div className="text-caption text-storm-cloud">Correct</div>
-					</div>
-					<div className="bg-deep-slate rounded p-3">
-						<div className="text-body font-w590 text-warning-red mb-1">
-							{questionsAnswered - sessionCorrectCount}
-						</div>
-						<div className="text-caption text-storm-cloud">Incorrect</div>
-					</div>
-					<div className="bg-deep-slate rounded p-3">
-						<div className="text-body font-w590 text-neon-lime mb-1">
-							{totalUniqueAnswered}
-						</div>
-						<div className="text-caption text-storm-cloud">
-							Unique Questions
-						</div>
-					</div>
-					<div className="bg-deep-slate rounded p-3">
-						<div className="text-body font-w590 text-fog-grey mb-1">
-							{sessionsCompleted + 1}
-						</div>
-						<div className="text-caption text-storm-cloud">Sessions</div>
-					</div>
-				</div>
+					<p className="text-body text-storm-cloud mb-6">
+						{correctAnswers} of {totalQuestions} correct
+					</p>
 
-				<div className="flex gap-3 justify-center">
-					<Button onClick={handleStartNewSession} variant="primary">
-						Start New Session
-					</Button>
-					{!hasNoMistakes && (
-						<Button onClick={() => {/* Scroll to mistakes */}} variant="secondary">
-							Review Mistakes
+					{/* Session Metrics */}
+					<div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
+						{metrics.map((m, i) => (
+							<div
+								key={m.label}
+								className="animate-fade-in-up rounded-cards border border-charcoal-grey/60 bg-deep-slate/70 p-3 backdrop-blur-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-muted-ash"
+								style={{ animationDelay: `${120 + i * 60}ms` }}
+							>
+								<div className={`text-heading font-w590 mb-1 ${m.color}`}>
+									{m.value}
+								</div>
+								<div className="text-caption text-storm-cloud">{m.label}</div>
+							</div>
+						))}
+					</div>
+
+					<div className="flex flex-wrap justify-center gap-3">
+						<Button onClick={handleStartNewSession} variant="primary">
+							Start New Session
 						</Button>
-					)}
+						{!hasNoMistakes && (
+							<Button
+								onClick={() =>
+									document
+										.getElementById("mistakes")
+										?.scrollIntoView({ behavior: "smooth" })
+								}
+								variant="secondary"
+							>
+								Review Mistakes
+							</Button>
+						)}
+					</div>
 				</div>
 			</div>
 
 			{/* Question Exhaustion Banner */}
 			{isQuestionExhausted && (
-				<div className="bg-warning-red/10 border border-warning-red/30 rounded-cards p-4">
+				<div className="rounded-cards border border-warning-red/30 bg-warning-red/[0.08] p-4 backdrop-blur-sm">
 					<div className="flex items-start gap-3">
-						<div className="text-warning-red text-2xl" aria-hidden="true">
+						<div className="text-2xl text-warning-red" aria-hidden="true">
 							⚠
 						</div>
 						<div>
@@ -171,9 +191,9 @@ export default function ResultsScreen() {
 
 			{/* Questions Remaining Warning */}
 			{!isQuestionExhausted && hasQuestionsRemaining && totalAvailable < 10 && (
-				<div className="bg-emerald/10 border border-emerald/30 rounded-cards p-4">
+				<div className="rounded-cards border border-emerald/30 bg-emerald/[0.06] p-4 backdrop-blur-sm">
 					<div className="flex items-start gap-3">
-						<div className="text-emerald text-2xl" aria-hidden="true">
+						<div className="text-2xl text-emerald" aria-hidden="true">
 							ℹ
 						</div>
 						<div>
@@ -189,12 +209,31 @@ export default function ResultsScreen() {
 			)}
 
 			{hasNoMistakes ? (
-				<div className="text-center text-storm-cloud py-8">
-					<p className="text-body">{PERFECT_SCORE_EMOJI}</p>
-					<p className="text-caption">{PERFECT_SCORE_SUBTEXT}</p>
+				<div className="animate-fade-in-up rounded-cards border border-emerald/30 bg-emerald/[0.06] py-10 text-center backdrop-blur-sm">
+					<div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-emerald/20 text-emerald">
+						<svg
+							className="h-6 w-6"
+							fill="none"
+							stroke="currentColor"
+							viewBox="0 0 24 24"
+							strokeWidth="2.5"
+						>
+							<path
+								strokeLinecap="round"
+								strokeLinejoin="round"
+								d="M5 13l4 4L19 7"
+							/>
+						</svg>
+					</div>
+					<p className="text-body font-w510 text-porcelain">
+						{PERFECT_SCORE_EMOJI}
+					</p>
+					<p className="text-caption text-storm-cloud">
+						{PERFECT_SCORE_SUBTEXT}
+					</p>
 				</div>
 			) : (
-				<div>
+				<div id="mistakes" className="animate-fade-in-up scroll-mt-6">
 					<h2 className="text-heading font-w510 text-porcelain mb-4">
 						{MISTAKES_SECTION_TITLE}
 					</h2>

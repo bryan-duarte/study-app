@@ -1,6 +1,7 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { IBM_Plex_Mono, Inter } from "next/font/google";
 import "./globals.css";
+import AppNav from "@/components/layout/AppNav";
 
 const inter = Inter({
 	variable: "--font-inter-variable",
@@ -19,7 +20,13 @@ const ibmPlexMono = IBM_Plex_Mono({
 export const metadata: Metadata = {
 	title: "AWS Certification Quiz",
 	description:
-		"Test your AWS knowledge with 50 practice questions covering various AWS services and concepts.",
+		"Practice for the AWS Solutions Architect Associate (SAA-C03) exam with 312 questions across four domains — quiz by category, drill mistakes, and spaced repetition.",
+};
+
+// viewport-fit=cover enables env(safe-area-inset-*) on notched devices,
+// so the fixed bottom action bar clears the iOS home indicator.
+export const viewport: Viewport = {
+	viewportFit: "cover",
 };
 
 export default function RootLayout({
@@ -34,6 +41,7 @@ export default function RootLayout({
 			suppressHydrationWarning
 		>
 			<body className="min-h-full flex flex-col font-sans" suppressHydrationWarning>
+				<AppNav />
 				{children}
 			</body>
 		</html>

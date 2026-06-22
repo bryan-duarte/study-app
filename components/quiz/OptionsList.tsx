@@ -10,15 +10,15 @@ interface OptionsListProps {
 }
 
 export default function OptionsList({ options, questionType }: OptionsListProps) {
-	const currentSelectedOption = useQuizStore((state) => {
-		const currentIndex = state.currentIndex;
-		return state.answers.get(currentIndex);
-	});
-	const confirmedAnswers = useQuizStore((state) => {
-		const currentIndex = state.currentIndex;
-		return state.confirmedAnswers.get(currentIndex);
-	});
-	const isCurrentConfirmed = useQuizStore((state) => state.isCurrentConfirmed);
+	const currentSelectedOption = useQuizStore((state) =>
+		state.answers.get(state.currentIndex),
+	);
+	// Reactive confirm check — reading the store's isCurrentConfirmed getter
+	// directly isn't reactive to confirmedAnswers mutations, so the answer
+	// reveal (green/red options) would never fire. Derive it here instead.
+	const isCurrentConfirmed = useQuizStore((state) =>
+		state.confirmedAnswers.has(state.currentIndex),
+	);
 	const selectOption = useQuizStore((state) => state.selectOption);
 
 	const isMultiSelect = questionType === "multi-option";

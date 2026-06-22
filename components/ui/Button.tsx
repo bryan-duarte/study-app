@@ -13,13 +13,13 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 const variantStyles: Record<ButtonVariant, string> = {
 	primary:
-		"bg-neon-lime text-pitch-black transition-opacity hover:opacity-90 font-w590",
+		"bg-neon-lime text-pitch-black font-w590 rounded-buttons hover:-translate-y-0.5 hover:shadow-[0_0_0_1px_rgba(228,242,34,0.35),0_10px_30px_-8px_rgba(228,242,34,0.55)] focus-visible:ring-2 focus-visible:ring-neon-lime focus-visible:ring-offset-2 focus-visible:ring-offset-pitch-black",
 	secondary:
-		"bg-transparent text-porcelain border border-charcoal-grey rounded-buttons transition-colors hover:bg-deep-slate focus:outline-none focus:ring-2 focus:ring-storm-cloud",
+		"bg-transparent text-porcelain border border-charcoal-grey rounded-buttons hover:bg-deep-slate hover:border-muted-ash hover:-translate-y-0.5 focus-visible:ring-2 focus-visible:ring-storm-cloud",
 	ghost:
-		"bg-transparent text-light-steel rounded-buttons transition-colors hover:bg-deep-slate focus:outline-none focus:ring-2 focus:ring-storm-cloud",
+		"bg-transparent text-light-steel rounded-buttons hover:bg-deep-slate hover:text-porcelain focus-visible:ring-2 focus-visible:ring-storm-cloud",
 	navigation:
-		"bg-transparent text-storm-cloud rounded-tags transition-colors hover:bg-deep-slate focus:outline-none",
+		"bg-transparent text-storm-cloud rounded-tags hover:bg-deep-slate hover:text-porcelain",
 };
 
 const sizeStyles: Record<ButtonSize, string> = {
@@ -42,9 +42,11 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
 		ref,
 	) => {
 		const baseStyles =
-			"inline-flex items-center justify-center gap-2 font-regular";
+			"inline-flex items-center justify-center gap-2 font-regular select-none transition-all duration-200 ease-out active:scale-[0.97] focus:outline-none";
 		const widthStyle = fullWidth ? "w-full" : "";
-		const disabledStyle = disabled ? "opacity-50 cursor-not-allowed" : "";
+		const disabledStyle = disabled
+			? "opacity-50 cursor-not-allowed pointer-events-none"
+			: "";
 
 		const combinedClassName = [
 			baseStyles,

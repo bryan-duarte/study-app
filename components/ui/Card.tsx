@@ -8,9 +8,11 @@ interface CardProps extends HTMLAttributes<HTMLDivElement> {
 }
 
 const variantStyles: Record<NonNullable<CardProps["variant"]>, string> = {
-	default: "bg-graphite rounded-cards shadow-sm",
-	elevated: "bg-deep-slate rounded-t-xl shadow-subtle",
-	nested: "bg-pitch-black rounded-cards",
+	default:
+		"bg-graphite rounded-cards border border-charcoal-grey/70 shadow-[inset_0_1px_0_rgba(255,255,255,0.03),0_2px_4px_rgba(0,0,0,0.4)]",
+	elevated:
+		"bg-deep-slate rounded-t-xl border border-charcoal-grey/60 shadow-[inset_0_1px_0_rgba(255,255,255,0.04),0_12px_32px_-16px_rgba(0,0,0,0.7)]",
+	nested: "bg-pitch-black rounded-cards border border-charcoal-grey/50",
 };
 
 const paddingStyles: Record<NonNullable<CardProps["padding"]>, string> = {

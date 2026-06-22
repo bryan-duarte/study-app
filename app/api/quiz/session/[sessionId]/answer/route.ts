@@ -108,7 +108,7 @@ export async function POST(
     // Step 6: Check if all questions in session are answered
     const { data: sessionQuestions, error: countError } = await supabase
       .from("session_questions")
-      .select("answered_at")
+      .select("answered_at, is_correct")
       .eq("session_id", sessionId);
 
     if (countError) {
@@ -116,10 +116,12 @@ export async function POST(
     }
 
     const answeredCount = sessionQuestions?.filter((sq) => sq.answered_at).length || 0;
+    const correctCount = sessionQuestions?.filter((sq) => sq.is_correct).length || 0;
     const totalQuestions = sessionQuestions?.length || 0;
     const sessionComplete = answeredCount >= totalQuestions && totalQuestions > 0;
 
-    // Step 7: If session is complete, update the session record
+    // Step 7: If session is complete, mark it and record analytics (once).
+    // The analytics row powers the score-trend chart on the Insights dashboard.
     if (sessionComplete) {
       await supabase
         .from("quiz_sessions")
@@ -128,6 +130,35 @@ export async function POST(
           completed_at: new Date().toISOString(),
         })
         .eq("id", sessionId);
+
+      if (session.user_id) {
+        const { data: existing } = await supabase
+          .from("quiz_analytics")
+          .select("id")
+          .eq("session_id", sessionId)
+          .maybeSingle();
+
+        if (!existing) {
+          const percentage =
+            totalQuestions > 0
+              ? Math.round((correctCount / totalQuestions) * 100)
+              : 0;
+          const { error: analyticsError } = await supabase
+            .from("quiz_analytics")
+            .insert({
+              user_id: session.user_id,
+              session_id: sessionId,
+              score: percentage,
+              total_questions: totalQuestions,
+              correct_count: correctCount,
+              percentage,
+              completed_at: new Date().toISOString(),
+            });
+          if (analyticsError) {
+            console.error("Failed to record analytics:", analyticsError);
+          }
+        }
+      }
     }
 
     return NextResponse.json({

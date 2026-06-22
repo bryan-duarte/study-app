@@ -9,6 +9,9 @@ const MISSING_VARS: string[] = [];
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+// Optional: stable fallback user so history/analytics attach to a user when
+// no one is logged in. Not required for the build to succeed.
+const defaultUserId = process.env.DEFAULT_USER_ID ?? "";
 
 if (!supabaseUrl) {
 	MISSING_VARS.push("NEXT_PUBLIC_SUPABASE_URL");
@@ -32,6 +35,7 @@ const env = {
 	supabaseUrl: supabaseUrl!,
 	supabaseAnonKey: supabaseAnonKey!,
 	supabaseServiceRoleKey: supabaseServiceRoleKey!,
+	defaultUserId,
 } as const;
 
 export { env };

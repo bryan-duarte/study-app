@@ -40,6 +40,31 @@ export interface SessionStartResponse {
 }
 
 /**
+ * Question-selection modes for starting a session.
+ * - standard:  random unanswered questions (interleaved across all domains)
+ * - category:  restricted to selected domains/topics
+ * - mistakes:  drill questions previously answered incorrectly
+ * - due:       spaced-repetition questions due for review today
+ */
+export type SessionMode = "standard" | "category" | "mistakes" | "due";
+
+/**
+ * Request body for POST /api/quiz/session/start
+ */
+export interface SessionStartRequest {
+  /** Explicit user override (rare); otherwise resolved server-side. */
+  user_id?: string;
+  /** How many questions to assign. */
+  question_count?: number;
+  /** Selection mode (defaults to "standard"). */
+  mode?: SessionMode;
+  /** Category mode: restrict to these SAA-C03 domains. */
+  domains?: string[];
+  /** Category mode: restrict to these topics. */
+  topics?: string[];
+}
+
+/**
  * Request body for recording quiz progress
  */
 export interface ProgressRequest {
@@ -159,6 +184,79 @@ export interface UserQuestionHistory {
   times_answered: number;
   created_at: string;
   updated_at: string;
+}
+
+// ============================================================================
+// History / Explorer / Stats Types
+// ============================================================================
+
+/** A previously answered question with full detail (Explorer + Markdown export). */
+export interface HistoryItem {
+  questionId: string;
+  title: string;
+  type: "single-option" | "multi-option";
+  domain: string | null;
+  topic: string | null;
+  difficulty: string | null;
+  options: {
+    id: string;
+    description: string;
+    isCorrect: boolean;
+    reasoning: string;
+  }[];
+  selectedOptionId: string | null;
+  isCorrect: boolean | null;
+  timesAnswered: number;
+  firstAnsweredAt: string | null;
+  lastAnsweredAt: string | null;
+}
+
+/** Summary of a past session (for the replay list). */
+export interface SessionSummary {
+  sessionId: string;
+  startedAt: string | null;
+  completedAt: string | null;
+  isComplete: boolean;
+  totalQuestions: number;
+  answeredCount: number;
+  correctCount: number;
+  percentage: number;
+}
+
+export interface DomainStat {
+  domain: string;
+  total: number;
+  answered: number;
+  correct: number;
+  accuracy: number;
+}
+
+export interface TopicStat {
+  topic: string;
+  total: number;
+  answered: number;
+  correct: number;
+  accuracy: number;
+}
+
+export interface TrendPoint {
+  completedAt: string;
+  percentage: number;
+}
+
+/** Aggregate study stats powering Mastery, Insights, Exhaustion + due badge. */
+export interface StatsResponse {
+  totalQuestions: number;
+  answered: number;
+  mastered: number;
+  wrongCount: number;
+  dueCount: number;
+  accuracyOverall: number;
+  isExhausted: boolean;
+  streakDays: number;
+  byDomain: DomainStat[];
+  byTopic: TopicStat[];
+  trend: TrendPoint[];
 }
 
 // ============================================================================

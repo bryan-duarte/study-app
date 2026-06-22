@@ -53,3 +53,19 @@ next-env.d.ts
 # playwright-mcp (logs, snapshots)
 .playwright-mcp/
 *.log
+
+# --- repo cleanup: keep scratch & one-off artifacts out of the repo ---
+
+# scratch / working dir (categorization slices, ideation, db dumps)
+/.md-work/
+
+# one-off shell scripts (AWS teardown/discovery, cleanup helpers)
+*.sh
+
+# playwright test suite (removed; MCP browser snapshots ignored above)
+/e2e/
+/playwright.config.ts
+
+# database dumps — migrations in supabase/migrations/ are intentionally NOT ignored
+*-backup.sql
+db-backup.sql
