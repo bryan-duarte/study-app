@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-label="AWS Quiz">
+  <!-- Full-bleed Neon Lime canvas (works for both "any" and "maskable" purposes).
+       Content (the cloud) sits inside the central ~75% so maskable safe-zone (80%) is honored. -->
+  <rect width="512" height="512" fill="#e4f222" />
+
+  <!-- Filled Pitch-Black cloud: union of overlapping circles for a smooth, minimalist silhouette.
+       x-extent ~116..408, y-extent ~157..421 → all within the maskable safe zone [51,461]. -->
+  <g fill="#08090a">
+    <circle cx="256" cy="235" r="78" />
+    <circle cx="180" cy="300" r="64" />
+    <circle cx="336" cy="285" r="72" />
+    <circle cx="205" cy="355" r="66" />
+    <circle cx="315" cy="350" r="70" />
+    <circle cx="262" cy="330" r="92" />
+  </g>
+</svg>
