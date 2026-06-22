@@ -49,6 +49,8 @@ next-env.d.ts
 
 # images (screenshots, temporary visuals)
 *.png
+# …but PWA/app icons in public/ MUST ship — Next serves them as static assets.
+!public/**/*.png
 
 # playwright-mcp (logs, snapshots)
 .playwright-mcp/
