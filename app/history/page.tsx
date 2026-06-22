@@ -2,12 +2,13 @@
 
 import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { Compass, Download, Filter, X, Plus, Tag } from "lucide-react";
+import { Compass, ChevronDown, Download, Filter, Lock, X, Plus, Tag } from "lucide-react";
 import HistoryCard from "@/components/history/HistoryCard";
 import { Button } from "@/components/ui/Button";
 import {
   historyToMarkdown,
   downloadMarkdown,
+  DEFAULT_EXPORT_OPTIONS,
   type MarkdownExportOptions,
 } from "@/lib/markdown-export";
 import { useTags } from "@/lib/client/useTags";
@@ -17,6 +18,68 @@ import type { HistoryItem } from "@/types/quiz";
 
 type Tab = "all" | "wrong";
 type TagMode = "and" | "or";
+
+/** localStorage key for the persisted export option set. Versioned for schema drift. */
+const EXPORT_STORAGE_KEY = "aws-prep-export-opts:v1";
+
+type ExportGroup = "Content" | "Your attempt" | "Meta";
+
+/** Toggleable export fields, grouped for the Customize panel.
+ *  The question text is intentionally absent — it's always included. */
+const EXPORT_FIELDS: {
+  key: keyof MarkdownExportOptions;
+  label: string;
+  group: ExportGroup;
+}[] = [
+  { key: "allOptions", label: "All options", group: "Content" },
+  { key: "correctAnswer", label: "Correct answer", group: "Content" },
+  { key: "explanation", label: "Explanation", group: "Content" },
+  { key: "yourAnswer", label: "Your answer", group: "Your attempt" },
+  { key: "timesAnswered", label: "Times answered", group: "Your attempt" },
+  { key: "timestamps", label: "Answered dates", group: "Your attempt" },
+  { key: "metaHeader", label: "Domain / topic / difficulty", group: "Meta" },
+  { key: "questionType", label: "Question type", group: "Meta" },
+  { key: "tags", label: "Tags", group: "Meta" },
+  { key: "questionId", label: "Question ID", group: "Meta" },
+];
+
+/** One-click option bundles for the Customize panel. */
+const PRESETS: { name: string; options: MarkdownExportOptions }[] = [
+  { name: "Flashcards", options: { ...DEFAULT_EXPORT_OPTIONS, metaHeader: false, yourAnswer: false } },
+  {
+    name: "Full notes",
+    options: {
+      ...DEFAULT_EXPORT_OPTIONS,
+      questionType: true,
+      tags: true,
+      timesAnswered: true,
+      timestamps: true,
+      questionId: true,
+    },
+  },
+];
+
+/**
+ * Read persisted export options. Client-only (SSR falls back to defaults).
+ * Safe to call from a useState lazy initializer because the export panel is
+ * gated behind `items.length > 0` and is never part of the server-rendered HTML,
+ * so reading localStorage here cannot cause a hydration mismatch.
+ */
+function loadExportOptions(): MarkdownExportOptions {
+  if (typeof window === "undefined") return DEFAULT_EXPORT_OPTIONS;
+  try {
+    const raw = window.localStorage.getItem(EXPORT_STORAGE_KEY);
+    if (raw) {
+      return {
+        ...DEFAULT_EXPORT_OPTIONS,
+        ...(JSON.parse(raw) as MarkdownExportOptions),
+      };
+    }
+  } catch {
+    // Ignore corrupt JSON.
+  }
+  return DEFAULT_EXPORT_OPTIONS;
+}
 
 /**
  * Explorer is a client component that reads the `tags`/`mode` search params
@@ -51,11 +114,9 @@ function ExplorerPage() {
     searchParams?.get("mode") === "and" ? "and" : "or",
   );
 
-  const [exportOpts, setExportOpts] = useState<MarkdownExportOptions>({
-    allOptions: true,
-    correctAnswer: true,
-    explanation: true,
-  });
+  const [exportOpts, setExportOpts] =
+    useState<MarkdownExportOptions>(loadExportOptions);
+  const [exportOpen, setExportOpen] = useState(false);
 
   const [bulkOpen, setBulkOpen] = useState(false);
   const [bulkQuery, setBulkQuery] = useState("");
@@ -96,6 +157,15 @@ function ExplorerPage() {
     setSelected(new Set());
   }, [tab, selectedTags, tagMode, load]);
 
+  // Persist export options whenever they change (loaded via the lazy initializer).
+  useEffect(() => {
+    try {
+      localStorage.setItem(EXPORT_STORAGE_KEY, JSON.stringify(exportOpts));
+    } catch {
+      // Ignore quota / private-mode errors.
+    }
+  }, [exportOpts]);
+
   const toggleSelect = useCallback((questionId: string) => {
     setSelected((prev) => {
       const next = new Set(prev);
@@ -121,14 +191,32 @@ function ExplorerPage() {
     });
   };
 
-  const handleExport = () => {
-    const toExport =
+  const toExport = useMemo(
+    () =>
       selectedCount > 0
         ? items.filter((i) => selected.has(i.questionId))
-        : items;
+        : items,
+    [selectedCount, selected, items],
+  );
+
+  const handleExport = () => {
     if (toExport.length === 0) return;
     downloadMarkdown("aws-saa-study-export.md", historyToMarkdown(toExport, exportOpts));
   };
+
+  // Live preview of the first export target + summary stats for the panel header.
+  const previewItem = toExport[0];
+  const previewMd = useMemo(
+    () => (previewItem ? historyToMarkdown([previewItem], exportOpts) : ""),
+    [previewItem, exportOpts],
+  );
+  const enabledCount = EXPORT_FIELDS.filter(
+    (f) => exportOpts[f.key] === true,
+  ).length;
+  const activePreset = useMemo(() => {
+    const key = JSON.stringify(exportOpts);
+    return PRESETS.find((p) => JSON.stringify(p.options) === key)?.name;
+  }, [exportOpts]);
 
   const onTagsMutated = useCallback(async () => {
     await reloadTags();
@@ -269,39 +357,93 @@ function ExplorerPage() {
         </div>
       )}
 
-      {/* Export options */}
+      {/* Export options — collapsible Customize panel */}
       {!loading && !error && items.length > 0 && (
-        <div className="animate-fade-in-up mt-3 flex flex-wrap items-center gap-1.5">
-          <span className="mr-1 text-caption font-w510 text-fog-grey">
-            Export includes:
-          </span>
-          <Chip
-            label="All options"
-            selected={exportOpts.allOptions !== false}
-            onClick={() =>
-              setExportOpts((p) => ({ ...p, allOptions: !(p.allOptions !== false) }))
-            }
-          />
-          <Chip
-            label="Correct answer"
-            selected={exportOpts.correctAnswer !== false}
-            onClick={() =>
-              setExportOpts((p) => ({
-                ...p,
-                correctAnswer: !(p.correctAnswer !== false),
-              }))
-            }
-          />
-          <Chip
-            label="Explanation"
-            selected={exportOpts.explanation !== false}
-            onClick={() =>
-              setExportOpts((p) => ({
-                ...p,
-                explanation: !(p.explanation !== false),
-              }))
-            }
-          />
+        <div className="animate-fade-in-up mt-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-caption font-w510 text-fog-grey">
+              Export includes {enabledCount} of {EXPORT_FIELDS.length} fields
+            </span>
+            {activePreset && (
+              <span className="rounded-badges border border-neon-lime/40 bg-neon-lime/10 px-1.5 py-0.5 text-caption text-neon-lime">
+                {activePreset}
+              </span>
+            )}
+            <button
+              type="button"
+              onClick={() => setExportOpen((v) => !v)}
+              aria-expanded={exportOpen}
+              className="ml-auto inline-flex items-center gap-1 text-caption font-w510 text-storm-cloud transition-colors hover:text-neon-lime"
+            >
+              {exportOpen ? "Hide options" : "Customize"}
+              <ChevronDown
+                className={`h-3.5 w-3.5 transition-transform ${exportOpen ? "rotate-180" : ""}`}
+                strokeWidth={2}
+              />
+            </button>
+          </div>
+
+          {exportOpen && (
+            <div className="animate-slide-down mt-2 rounded-cards border border-charcoal-grey/70 bg-graphite/60 p-3">
+              {/* Locked: the question text is always included */}
+              <div className="flex items-center gap-1.5">
+                <span className="inline-flex items-center gap-1.5 rounded-pill border border-charcoal-grey/60 bg-deep-slate/40 px-2.5 py-1 text-caption text-storm-cloud">
+                  <Lock className="h-3 w-3" strokeWidth={2.5} />
+                  Question text · always included
+                </span>
+              </div>
+
+              {/* Presets */}
+              <div className="mt-2.5 flex flex-wrap items-center gap-1.5 border-b border-charcoal-grey/60 pb-2.5">
+                <span className="mr-1 text-caption font-w510 uppercase tracking-[0.12em] text-fog-grey">
+                  Presets
+                </span>
+                {PRESETS.map((p) => (
+                  <Chip
+                    key={p.name}
+                    label={p.name}
+                    selected={activePreset === p.name}
+                    onClick={() => setExportOpts(p.options)}
+                  />
+                ))}
+              </div>
+
+              {/* Toggleable fields, grouped */}
+              {(["Content", "Your attempt", "Meta"] as const).map((group) => (
+                <div
+                  key={group}
+                  className="mt-2.5 flex flex-wrap items-center gap-1.5"
+                >
+                  <span className="mr-1 text-caption font-w510 uppercase tracking-[0.12em] text-fog-grey">
+                    {group}
+                  </span>
+                  {EXPORT_FIELDS.filter((f) => f.group === group).map((f) => (
+                    <Chip
+                      key={f.key}
+                      label={f.label}
+                      selected={exportOpts[f.key] === true}
+                      onClick={() =>
+                        setExportOpts((p) => ({
+                          ...p,
+                          [f.key]: !(p[f.key] === true),
+                        }))
+                      }
+                    />
+                  ))}
+                </div>
+              ))}
+
+              {/* Live preview of the first export target */}
+              <div className="mt-3 border-t border-charcoal-grey/60 pt-2.5">
+                <p className="text-caption font-w510 uppercase tracking-[0.12em] text-fog-grey">
+                  Preview · question 1 of {toExport.length}
+                </p>
+                <pre className="mt-1.5 max-h-64 overflow-auto whitespace-pre-wrap rounded-cards border border-charcoal-grey/60 bg-pitch-black/40 p-3 font-mono text-caption leading-relaxed text-light-steel">
+                  {previewMd}
+                </pre>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
