@@ -5,14 +5,19 @@ import { Check, ChevronDown, CircleCheck, CircleX } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { MarkdownRenderer } from "@/components/ui/MarkdownRenderer";
+import { TagSelector } from "@/components/tags/TagSelector";
 import { DOMAIN_LABELS } from "@/lib/categories";
-import type { HistoryItem } from "@/types/quiz";
+import type { HistoryItem, Tag } from "@/types/quiz";
 
 interface HistoryCardProps {
   item: HistoryItem;
   index: number;
   selected: boolean;
   onToggleSelect: (questionId: string) => void;
+  /** The user's full tag list, shared page-level (avoids per-card requests). */
+  availableTags?: Tag[];
+  /** Notify parent to refetch after a tag mutation (refresh counts + items). */
+  onTagsMutated?: () => void;
 }
 
 function domainLabel(domain: string | null): string | null {
@@ -26,6 +31,8 @@ export default function HistoryCard({
   index,
   selected,
   onToggleSelect,
+  availableTags,
+  onTagsMutated,
 }: HistoryCardProps) {
   const [open, setOpen] = useState(false);
 
@@ -73,6 +80,14 @@ export default function HistoryCard({
                 {item.difficulty}
               </Badge>
             )}
+            {item.tags?.map((t) => (
+              <span
+                key={t.id}
+                className="inline-flex items-center rounded-pill border border-neon-lime/40 bg-neon-lime/10 px-2 py-0.5 text-caption text-neon-lime"
+              >
+                {t.name}
+              </span>
+            ))}
             <span className="flex-1" />
             {item.isCorrect === true ? (
               <span className="inline-flex items-center gap-1 rounded-pill bg-forest-green/20 px-2 py-0.5 text-caption font-w510 text-emerald">
@@ -181,6 +196,20 @@ export default function HistoryCard({
                   {item.timesAnswered === 1 ? "" : "s"}
                 </p>
               )}
+
+              <div>
+                <p className="text-caption font-w510 uppercase tracking-[0.12em] text-fog-grey">
+                  Tags
+                </p>
+                <div className="mt-1">
+                  <TagSelector
+                    questionId={item.questionId}
+                    currentTags={item.tags}
+                    availableTags={availableTags}
+                    onMutated={onTagsMutated}
+                  />
+                </div>
+              </div>
             </div>
           )}
         </div>

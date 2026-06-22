@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { ChevronDown, Check, X } from "lucide-react";
 import { MarkdownRenderer } from "@/components/ui/MarkdownRenderer";
+import { TagSelector } from "@/components/tags/TagSelector";
 import type { SessionQuestion } from "@/types/quiz";
 
 interface ReviewQuestionProps {
@@ -69,6 +70,10 @@ export default function ReviewQuestion({
             isSelected={opt.id === selectedOptionId}
           />
         ))}
+      </div>
+
+      <div className="mt-4 border-t border-charcoal-grey/60 pt-3">
+        <TagSelector questionId={question.id} />
       </div>
     </div>
   );
