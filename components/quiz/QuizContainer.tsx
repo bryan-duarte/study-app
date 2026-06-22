@@ -2,8 +2,10 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { X } from "lucide-react";
 import type { QuizQuestion } from "@/lib/transformers/question";
 import { cn } from "@/lib/utils/cn";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { useQuizStore } from "@/store/quizStore";
 import FeedbackCard from "./FeedbackCard";
 import OptionsList from "./OptionsList";
@@ -30,10 +32,12 @@ export default function QuizContainer() {
 	const isSessionComplete = useQuizStore((state) => state.isSessionComplete);
 	const session = useQuizStore((state) => state.session);
 	const selectedQuestionCount = useQuizStore((state) => state.selectedQuestionCount);
+	const stopSession = useQuizStore((state) => state.stopSession);
 
 	const [isLoading, setIsLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 	const [isValidating, setIsValidating] = useState(false);
+	const [isStopOpen, setIsStopOpen] = useState(false);
 	const hasInitializedRef = useRef(false);
 
 	const currentQuestion = questions[currentIndex] ?? null;
@@ -52,6 +56,12 @@ export default function QuizContainer() {
 		await confirmAnswer();
 		// Clear validating state after a short delay to ensure server response is processed
 		setTimeout(() => setIsValidating(false), 100);
+	};
+
+	const handleStopConfirm = () => {
+		setIsStopOpen(false);
+		stopSession();
+		router.push("/");
 	};
 
 	// Initialize quiz session and load questions
@@ -240,6 +250,19 @@ export default function QuizContainer() {
 
 	return (
 		<div className="w-full max-w-3xl mx-auto p-6 pb-24 md:pb-6">
+			{/* Stop session control */}
+			<div className="mb-3 flex justify-end">
+				<button
+					onClick={() => setIsStopOpen(true)}
+					type="button"
+					className="inline-flex items-center gap-1.5 rounded-buttons px-3 py-1.5 text-caption font-w510 text-storm-cloud transition-colors hover:bg-deep-slate/60 hover:text-warning-red focus:outline-none focus-visible:ring-2 focus-visible:ring-storm-cloud focus-visible:ring-offset-2 focus-visible:ring-offset-pitch-black"
+					aria-label="Stop session"
+				>
+					<X className="h-4 w-4" strokeWidth={2} />
+					Stop
+				</button>
+			</div>
+
 			{/* Live region for announcing answer feedback */}
 			<div aria-live="polite" aria-atomic="true" className="sr-only">
 				{isCurrentConfirmed ? "Answer submitted" : ""}
@@ -346,6 +369,17 @@ export default function QuizContainer() {
 					</p>
 				</div>
 			</div>
+
+			<ConfirmDialog
+				open={isStopOpen}
+				title="Stop session?"
+				description="Your progress on this session won't be saved as complete. Answers you've already submitted will be kept."
+				confirmLabel="Stop session"
+				cancelLabel="Keep going"
+				destructive
+				onConfirm={handleStopConfirm}
+				onCancel={() => setIsStopOpen(false)}
+			/>
 		</div>
 	);
 }

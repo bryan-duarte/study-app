@@ -1,5 +1,7 @@
 "use client";
 
+import { useRouter } from "next/navigation";
+import { Home } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { useQuizStore } from "@/store/quizStore";
 import MistakesList from "./MistakesList";
@@ -22,6 +24,7 @@ export default function ResultsScreen() {
 		answeredQuestionIds,
 	} = useQuizStore();
 
+	const router = useRouter();
 	const sessionMetrics = session.sessionMetrics;
 
 	const totalQuestions = questions.length;
@@ -165,6 +168,10 @@ export default function ResultsScreen() {
 								Review Mistakes
 							</Button>
 						)}
+						<Button onClick={() => router.push("/")} variant="secondary">
+							<Home className="h-4 w-4" strokeWidth={2} />
+							Back to Home
+						</Button>
 					</div>
 				</div>
 			</div>

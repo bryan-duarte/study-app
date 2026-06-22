@@ -106,6 +106,7 @@ interface QuizActions {
 	nextQuestion: () => void;
 	previousQuestion: () => void;
 	resetQuiz: () => void;
+	stopSession: () => void;
 	shuffleQuestions: () => void;
 	setCurrentPage: (page: number) => void;
 	syncProgress: () => Promise<void>;
@@ -529,6 +530,43 @@ export const useQuizStore = create<QuizState>()(
 						sessionQuestions: new Map(),
 						sessionMetrics: null,
 						currentSessionData: null,
+					},
+					sessionAnsweredCount: 0,
+					sessionProgress: 0,
+				});
+			},
+
+			// Stop an in-progress session without treating it as completed.
+			// Mirrors resetQuiz's cleanup but skips completion bookkeeping
+			// (no handleSessionComplete, no sessionsCompleted increment). Partial
+			// answers are still credited to mastery stats since they were already
+			// recorded server-side via recordSessionAnswer.
+			stopSession: () => {
+				const { questions, confirmedAnswers, answeredQuestionIds, totalUniqueQuestionsAnswered, session } = get();
+
+				const newAnsweredIds = new Set(answeredQuestionIds);
+				let uniqueCount = totalUniqueQuestionsAnswered;
+				for (const [questionIndex] of confirmedAnswers.entries()) {
+					const question = questions[questionIndex];
+					if (question && !newAnsweredIds.has(question.id)) {
+						newAnsweredIds.add(question.id);
+						uniqueCount++;
+					}
+				}
+
+				set({
+					answers: new Map(),
+					confirmedAnswers: new Map(),
+					currentIndex: INITIAL_QUESTION_INDEX,
+					totalUniqueQuestionsAnswered: uniqueCount,
+					answeredQuestionIds: newAnsweredIds,
+					session: {
+						...session,
+						sessionId: null,
+						sessionQuestions: new Map(),
+						sessionMetrics: null,
+						currentSessionData: null,
+						sessionStartTime: null,
 					},
 					sessionAnsweredCount: 0,
 					sessionProgress: 0,
