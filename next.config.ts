@@ -33,6 +33,17 @@ const nextConfig: NextConfig = {
 					},
 				],
 			},
+			// Correct MIME type for the web app manifest (required by Lighthouse/Chrome).
+			{
+				source: "/manifest.webmanifest",
+				headers: [{ key: "Content-Type", value: "application/manifest+json" }],
+			},
+			// The service worker must always be revalidated so version updates are
+			// picked up on the next navigation instead of serving a stale script.
+			{
+				source: "/sw.js",
+				headers: [{ key: "Cache-Control", value: "no-cache" }],
+			},
 		];
 	},
 };
