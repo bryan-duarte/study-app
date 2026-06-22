@@ -1,6 +1,7 @@
 "use client";
 
 import { MarkdownRenderer } from "@/components/ui/MarkdownRenderer";
+import { TagSelector } from "@/components/tags/TagSelector";
 import type { QuizQuestion } from "@/lib/transformers/question";
 import { useQuizStore } from "@/store/quizStore";
 
@@ -148,6 +149,10 @@ export default function FeedbackCard({ question }: FeedbackCardProps) {
 					)}
 				</div>
 			)}
+
+			<div className="mt-4 border-t border-charcoal-grey/60 pt-3">
+				<TagSelector questionId={question.id} />
+			</div>
 		</div>
 	);
 }

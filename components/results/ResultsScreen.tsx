@@ -15,7 +15,6 @@ export default function ResultsScreen() {
 		questions,
 		confirmedAnswers,
 		resetQuiz,
-		correctCount,
 		sessionsCompleted,
 		totalUniqueQuestionsAnswered,
 		session,
@@ -23,24 +22,24 @@ export default function ResultsScreen() {
 	} = useQuizStore();
 
 	const sessionMetrics = session.sessionMetrics;
+	const currentSessionData = session.currentSessionData;
 
-	const totalQuestions = questions.length;
-	const correctAnswers = correctCount;
-	const incorrectAnswers = totalQuestions - correctCount;
+	// Authoritative source: the session's questions with their server-validated
+	// isCorrect flags (refreshed by handleSessionComplete). Deriving the summary
+	// from this keeps the percentage and "X of Y correct" in sync with the
+	// metric tiles below — the store's correctCount getter diverges from it.
+	const sessionQuestions = currentSessionData?.questions ?? [];
+	const totalQuestions = sessionQuestions.length || questions.length;
+	const correctAnswers = sessionQuestions.filter((q) => q.isCorrect).length;
 	const percentage =
 		totalQuestions > 0
 			? Math.round((correctAnswers / totalQuestions) * 100)
 			: 0;
 
-	// Use session metrics if available, otherwise use current session data
-	const currentSessionData = session.currentSessionData;
-	const questionsAnswered = currentSessionData?.questions.length ?? totalQuestions;
-
-	// Calculate correct count from session data if available
-	let sessionCorrectCount = correctCount;
-	if (currentSessionData) {
-		sessionCorrectCount = currentSessionData.questions.filter((q) => q.isCorrect).length;
-	}
+	// The session is only complete when every question is answered, so the
+	// answered count equals the session length (this drives the "Incorrect" tile).
+	const questionsAnswered = sessionQuestions.length || questions.length;
+	const sessionCorrectCount = correctAnswers;
 
 	const totalUniqueAnswered = sessionMetrics?.totalUniqueQuestionsAnswered ?? totalUniqueQuestionsAnswered;
 	const totalAvailable = currentSessionData?.totalAvailableQuestions ?? (65 - answeredQuestionIds.size);
@@ -80,9 +79,9 @@ export default function ResultsScreen() {
 	const isQuestionExhausted = session.isQuestionExhausted || totalAvailable === 0;
 	const hasQuestionsRemaining = totalAvailable > 0;
 
-	const handleStartNewSession = async () => {
+	const handleBackToHome = () => {
 		resetQuiz();
-		window.location.href = "/quiz";
+		window.location.href = "/";
 	};
 
 	const handleTryAgain = () => {
@@ -150,8 +149,8 @@ export default function ResultsScreen() {
 					</div>
 
 					<div className="flex flex-wrap justify-center gap-3">
-						<Button onClick={handleStartNewSession} variant="primary">
-							Start New Session
+						<Button onClick={handleBackToHome} variant="primary">
+							Back to Home
 						</Button>
 						{!hasNoMistakes && (
 							<Button

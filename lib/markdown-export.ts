@@ -14,8 +14,22 @@ function selectedOption(item: HistoryItem) {
   return item.options.find((o) => o.id === item.selectedOptionId) ?? null;
 }
 
+/** What to include per question in the export. All default to true. */
+export interface MarkdownExportOptions {
+  /** List every option (distractors + correct, correct marked with ✅). */
+  allOptions?: boolean;
+  /** The "Correct answer(s):" line naming just the correct answers. */
+  correctAnswer?: boolean;
+  /** The "Explanation:" block (the why behind the correct answer). */
+  explanation?: boolean;
+}
+
 /** Render a list of history items as one Markdown string. */
-export function historyToMarkdown(items: HistoryItem[]): string {
+export function historyToMarkdown(
+  items: HistoryItem[],
+  options: MarkdownExportOptions = {},
+): string {
+  const { allOptions = true, correctAnswer = true, explanation = true } = options;
   const today = new Date().toISOString().slice(0, 10);
   const out: string[] = [
     "# AWS SAA-C03 — Study Export",
@@ -33,8 +47,17 @@ export function historyToMarkdown(items: HistoryItem[]): string {
     out.push(item.title.trim());
     out.push("");
 
+    if (allOptions && item.options.length > 0) {
+      out.push("**Options:**");
+      out.push("");
+      for (const o of item.options) {
+        out.push(`${o.isCorrect ? "- ✅" : "-"} ${o.description}`);
+      }
+      out.push("");
+    }
+
     const correct = correctOptions(item);
-    if (correct.length > 0) {
+    if (correctAnswer && correct.length > 0) {
       out.push(
         `**Correct answer${correct.length > 1 ? "s" : ""}:** ${correct
           .map((o) => o.description)
@@ -50,12 +73,14 @@ export function historyToMarkdown(items: HistoryItem[]): string {
       out.push("");
     }
 
-    const explanation = correct[0]?.reasoning?.trim();
     if (explanation) {
-      out.push("**Explanation:**");
-      out.push("");
-      out.push(explanation);
-      out.push("");
+      const explanationText = correct[0]?.reasoning?.trim();
+      if (explanationText) {
+        out.push("**Explanation:**");
+        out.push("");
+        out.push(explanationText);
+        out.push("");
+      }
     }
 
     out.push("---");

@@ -187,6 +187,24 @@ export interface UserQuestionHistory {
 }
 
 // ============================================================================
+// Tags
+// ============================================================================
+
+/** A user-defined study tag (camelCase mirror of the tags table). */
+export interface Tag {
+  id: string;
+  /** Display name (user-editable; rename recomputes the slug). */
+  name: string;
+  /** Lowercased/trimmed/dashed name; uniqueness key + /history?tags= param. */
+  slug: string;
+}
+
+/** Tag with the number of questions carrying it (management page + bulk UI). */
+export interface TagWithCount extends Tag {
+  questionCount: number;
+}
+
+// ============================================================================
 // History / Explorer / Stats Types
 // ============================================================================
 
@@ -209,6 +227,8 @@ export interface HistoryItem {
   timesAnswered: number;
   firstAnsweredAt: string | null;
   lastAnsweredAt: string | null;
+  /** Tags assigned by the user (populated by GET /api/quiz/history). Optional so older/cached responses stay valid. */
+  tags?: Tag[];
 }
 
 /** Summary of a past session (for the replay list). */

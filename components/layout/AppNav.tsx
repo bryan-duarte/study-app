@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Cloud, Home, Compass, History, BarChart3 } from "lucide-react";
+import { Cloud, Home, Compass, History, BarChart3, Tag } from "lucide-react";
 
 const LINKS = [
   { href: "/", label: "Home", icon: Home },
   { href: "/history", label: "Explorer", icon: Compass },
+  { href: "/tags", label: "Tags", icon: Tag },
   { href: "/sessions", label: "Sessions", icon: History },
   { href: "/insights", label: "Insights", icon: BarChart3 },
 ];
