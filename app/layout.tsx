@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { IBM_Plex_Mono, Inter } from "next/font/google";
 import "./globals.css";
 import AppNav from "@/components/layout/AppNav";
+import AppShell from "@/components/layout/AppShell";
 import ServiceWorkerRegister from "@/components/pwa/ServiceWorkerRegister";
 
 const inter = Inter({
@@ -65,7 +66,7 @@ export default function RootLayout({
 		>
 			<body className="min-h-full flex flex-col font-sans" suppressHydrationWarning>
 				<AppNav />
-				{children}
+				<AppShell>{children}</AppShell>
 				<ServiceWorkerRegister />
 			</body>
 		</html>

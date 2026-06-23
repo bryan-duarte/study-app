@@ -12,10 +12,111 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "14.5"
   }
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
   public: {
     Tables: {
+      certifications: {
+        Row: {
+          created_at: string
+          description: string | null
+          exam_code: string | null
+          id: string
+          is_active: boolean
+          name: string
+          provider: string | null
+          slug: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          exam_code?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          provider?: string | null
+          slug: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          exam_code?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          provider?: string | null
+          slug?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      question_tags: {
+        Row: {
+          created_at: string
+          id: string
+          question_id: string
+          tag_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          question_id: string
+          tag_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          question_id?: string
+          tag_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "question_tags_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "questions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "question_tags_tag_id_fkey"
+            columns: ["tag_id"]
+            isOneToOne: false
+            referencedRelation: "tags"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       questions: {
         Row: {
+          certification_id: string | null
           created_at: string | null
           difficulty: string | null
           domain: string | null
@@ -27,6 +128,7 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          certification_id?: string | null
           created_at?: string | null
           difficulty?: string | null
           domain?: string | null
@@ -38,6 +140,7 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          certification_id?: string | null
           created_at?: string | null
           difficulty?: string | null
           domain?: string | null
@@ -48,7 +151,15 @@ export type Database = {
           type?: string
           updated_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "questions_certification_id_fkey"
+            columns: ["certification_id"]
+            isOneToOne: false
+            referencedRelation: "certifications"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       quiz_analytics: {
         Row: {
@@ -169,6 +280,33 @@ export type Database = {
           },
         ]
       }
+      tags: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          slug: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          slug: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          slug?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_progress: {
         Row: {
           answered_question_ids: string[]
@@ -254,69 +392,6 @@ export type Database = {
             columns: ["question_id"]
             isOneToOne: false
             referencedRelation: "questions"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      tags: {
-        Row: {
-          created_at: string
-          id: string
-          name: string
-          slug: string
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          name: string
-          slug: string
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          name?: string
-          slug?: string
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
-      question_tags: {
-        Row: {
-          created_at: string
-          id: string
-          question_id: string
-          tag_id: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          question_id: string
-          tag_id: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          question_id?: string
-          tag_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "question_tags_question_id_fkey"
-            columns: ["question_id"]
-            isOneToOne: false
-            referencedRelation: "questions"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "question_tags_tag_id_fkey"
-            columns: ["tag_id"]
-            isOneToOne: false
-            referencedRelation: "tags"
             referencedColumns: ["id"]
           },
         ]
@@ -463,6 +538,9 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {},
   },

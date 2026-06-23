@@ -192,11 +192,11 @@ body::before {
 	mask-image: radial-gradient(ellipse 75% 55% at 50% 0%, #000 25%, transparent 72%);
 }
 
-/* Keep all page content above the fixed texture layer */
-body > * {
-	position: relative;
-	z-index: 1;
-}
+/* Page content is lifted above the fixed texture layer by AppShell's wrapper
+   (relative z-[1]). We must NOT use a blanket `body > *` rule for this: it is
+   unlayered, so in Tailwind v4 it overrides the (layered) `fixed`/`sticky`
+   position utilities on the navs — silently dropping the sticky top nav and the
+   fixed mobile tab bar back into normal flow so they scroll away with content. */
 
 /* Safe-area helpers for notched/mobile devices (requires viewport-fit=cover) */
 .pb-safe {

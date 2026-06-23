@@ -32,6 +32,8 @@ export interface QuizQuestion {
 	type: "single-option" | "multi-option";
 	title: string;
 	options: QuizOption[];
+	/** Owning certification (one-to-many). Optional: absent on legacy/cached rows. */
+	certificationId?: string | null;
 }
 
 /**
@@ -64,11 +66,13 @@ export function transformQuestion(data: unknown): QuizQuestion {
 
 	// Type assertion: data is guaranteed to be SupabaseQuestion after validation
 	const question = data as SupabaseQuestion;
+	const certificationId = (question as Record<string, unknown>).certification_id;
 	return {
 		id: question.id as string,
 		type: question.type as "single-option" | "multi-option",
 		title: question.title as string,
 		options: transformOptions(question.options),
+		certificationId: typeof certificationId === "string" ? certificationId : null,
 	};
 }
 

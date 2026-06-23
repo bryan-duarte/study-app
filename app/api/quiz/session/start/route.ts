@@ -39,6 +39,7 @@ export async function POST(request: Request) {
     const body = (await request.json()) as SessionStartRequest;
     const mode = body.mode ?? "standard";
     const requestedCount = body.question_count ?? SESSION_QUESTIONS_COUNT;
+    const certificationId = body.certification_id;
     const userId = body.user_id ?? (await resolveUserId());
 
     const supabase = createSupabaseClient();
@@ -79,6 +80,9 @@ export async function POST(request: Request) {
       // standard or category: pool of question IDs (optionally filtered),
       // minus the ones the user has already answered.
       let query = supabase.from("questions").select("id");
+      // Active-certification filter (optional + backward-compatible). mistakes/due
+      // modes draw from the user's history, which is single-certification today.
+      if (certificationId) query = query.eq("certification_id", certificationId);
       if (mode === "category") {
         if (body.domains?.length) query = query.in("domain", body.domains);
         if (body.topics?.length) query = query.in("topic", body.topics);

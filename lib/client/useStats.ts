@@ -2,9 +2,14 @@
 
 import { useEffect, useState, useCallback } from "react";
 import type { StatsResponse } from "@/types/quiz";
+import { useCertificationStore } from "@/store/certificationStore";
 
-/** Fetches aggregate study stats (mastery, streak, due, per-domain, trend). */
+/** Fetches aggregate study stats (mastery, streak, due, per-domain, trend)
+ *  scoped to the active certification. */
 export function useStats() {
+  const activeCertificationId = useCertificationStore(
+    (s) => s.activeCertificationId,
+  );
   const [stats, setStats] = useState<StatsResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -12,7 +17,10 @@ export function useStats() {
   const reload = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/quiz/stats", { cache: "no-store" });
+      const query = activeCertificationId
+        ? `?certification_id=${encodeURIComponent(activeCertificationId)}`
+        : "";
+      const res = await fetch(`/api/quiz/stats${query}`, { cache: "no-store" });
       if (!res.ok) throw new Error("stats failed");
       setStats((await res.json()) as StatsResponse);
       setError(false);
@@ -21,7 +29,7 @@ export function useStats() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [activeCertificationId]);
 
   useEffect(() => {
     void reload();

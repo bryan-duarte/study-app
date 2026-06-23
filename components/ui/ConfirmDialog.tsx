@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { Button } from "./Button";
 
 interface ConfirmDialogProps {
@@ -42,9 +43,16 @@ export function ConfirmDialog({
 		return () => window.removeEventListener("keydown", handleKeyDown);
 	}, [open, onCancel]);
 
-	if (!open) return null;
+	// `typeof document` guards SSR: React's server renderer skips portals, so the
+	// only risk is touching `document.body` before the client has one. No mounted
+	// state needed — the portal commits (attaching cancelRef) before the focus
+	// effect runs, so focus-on-open works even on a first render with open=true.
+	if (!open || typeof document === "undefined") return null;
 
-	return (
+	// Portaled to <body> so the overlay escapes any ancestor stacking context
+	// (e.g. AppShell's `relative z-[1]` wrapper) and its z-50 always paints above
+	// the z-40 mobile BottomNav, on every route — not just the nav-less /quiz.
+	return createPortal(
 		<div
 			className="fixed inset-0 z-50 flex items-center justify-center p-4"
 			role="dialog"
@@ -92,6 +100,7 @@ export function ConfirmDialog({
 					)}
 				</div>
 			</div>
-		</div>
+		</div>,
+		document.body,
 	);
 }

@@ -3,6 +3,7 @@ import { persist } from "zustand/middleware";
 import type { QuizQuestion } from "@/lib/transformers/question";
 import type { SessionQuestion, SessionStartResponse, SessionMode } from "@/types/quiz";
 import { fetchWithTimeout, isTimeoutError } from "@/lib/fetch";
+import { useCertificationStore } from "./certificationStore";
 
 // Constants
 const INITIAL_QUESTION_INDEX = 0;
@@ -739,6 +740,8 @@ export const useQuizStore = create<QuizState>()(
 				try {
 					const count = questionCount ?? get().selectedQuestionCount;
 					const cfg = config ?? get().sessionConfig;
+					const activeCertificationId =
+						useCertificationStore.getState().activeCertificationId ?? undefined;
 					const response = await fetchWithTimeout("/api/quiz/session/start", {
 						method: "POST",
 						headers: { "Content-Type": "application/json" },
@@ -748,6 +751,7 @@ export const useQuizStore = create<QuizState>()(
 							mode: cfg.mode,
 							domains: cfg.domains,
 							topics: cfg.topics,
+							certification_id: activeCertificationId,
 						}),
 					});
 

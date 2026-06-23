@@ -2,16 +2,18 @@
 
 import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { Compass, ChevronDown, Download, Filter, Lock, X, Plus, Tag } from "lucide-react";
+import { Compass, ChevronDown, Download, Filter, Lock, X, Plus, Tag, Copy, Check } from "lucide-react";
 import HistoryCard from "@/components/history/HistoryCard";
 import { Button } from "@/components/ui/Button";
 import {
   historyToMarkdown,
   downloadMarkdown,
+  certificationExportTitle,
   DEFAULT_EXPORT_OPTIONS,
   type MarkdownExportOptions,
 } from "@/lib/markdown-export";
 import { useTags } from "@/lib/client/useTags";
+import { useCertifications } from "@/lib/client/useCertifications";
 import { fetchWithTimeout } from "@/lib/fetch";
 import { toSlug } from "@/lib/tags";
 import type { HistoryItem } from "@/types/quiz";
@@ -122,7 +124,12 @@ function ExplorerPage() {
   const [bulkQuery, setBulkQuery] = useState("");
   const [bulkError, setBulkError] = useState(false);
 
+  const [copied, setCopied] = useState(false);
+  const [copyError, setCopyError] = useState(false);
+
   const { tags, reload: reloadTags } = useTags();
+  const { activeCertification, activeCertificationId } = useCertifications();
+  const exportTitle = certificationExportTitle(activeCertification);
 
   const load = useCallback(
     async (currentTab: Tab, tagSlugs: string[], mode: TagMode) => {
@@ -131,6 +138,9 @@ function ExplorerPage() {
       try {
         const params = new URLSearchParams();
         params.set("wrongOnly", currentTab === "wrong" ? "true" : "false");
+        if (activeCertificationId) {
+          params.set("certification_id", activeCertificationId);
+        }
         if (tagSlugs.length > 0) {
           params.set("tags", tagSlugs.join(","));
           params.set("tagMode", mode);
@@ -148,7 +158,7 @@ function ExplorerPage() {
         setLoading(false);
       }
     },
-    [],
+    [activeCertificationId],
   );
 
   useEffect(() => {
@@ -201,14 +211,41 @@ function ExplorerPage() {
 
   const handleExport = () => {
     if (toExport.length === 0) return;
-    downloadMarkdown("aws-saa-study-export.md", historyToMarkdown(toExport, exportOpts));
+    downloadMarkdown(
+      "aws-saa-study-export.md",
+      historyToMarkdown(toExport, exportOpts, exportTitle),
+    );
+  };
+
+  // Copy the same filtered markdown to the clipboard (best-effort; needs a
+  // secure context). Mirrors handleExport's selection logic.
+  const handleCopy = async () => {
+    if (toExport.length === 0) return;
+    setCopyError(false);
+    const md = historyToMarkdown(toExport, exportOpts, exportTitle);
+    const canCopy =
+      typeof navigator !== "undefined" &&
+      typeof navigator.clipboard?.writeText === "function";
+    if (!canCopy) {
+      setCopyError(true);
+      setTimeout(() => setCopyError(false), 2500);
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(md);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1800);
+    } catch {
+      setCopyError(true);
+      setTimeout(() => setCopyError(false), 2500);
+    }
   };
 
   // Live preview of the first export target + summary stats for the panel header.
   const previewItem = toExport[0];
   const previewMd = useMemo(
-    () => (previewItem ? historyToMarkdown([previewItem], exportOpts) : ""),
-    [previewItem, exportOpts],
+    () => (previewItem ? historyToMarkdown([previewItem], exportOpts, exportTitle) : ""),
+    [previewItem, exportOpts, exportTitle],
   );
   const enabledCount = EXPORT_FIELDS.filter(
     (f) => exportOpts[f.key] === true,
@@ -269,16 +306,42 @@ function ExplorerPage() {
           </div>
         </div>
 
-        <Button
-          variant="primary"
-          size="sm"
-          onClick={handleExport}
-          disabled={loading || items.length === 0}
-          className="flex-shrink-0"
-        >
-          <Download className="h-4 w-4" strokeWidth={2} />
-          {selectedCount > 0 ? `Export .md (${selectedCount})` : "Export .md"}
-        </Button>
+        <div className="flex flex-shrink-0 flex-col items-stretch gap-1 sm:items-end">
+          <div className="flex items-center gap-2">
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={handleCopy}
+              disabled={loading || items.length === 0}
+              aria-label="Copy study markdown to clipboard"
+            >
+              {copied ? (
+                <Check className="h-4 w-4 text-neon-lime" strokeWidth={2.5} />
+              ) : (
+                <Copy className="h-4 w-4" strokeWidth={2} />
+              )}
+              {copied
+                ? "Copied!"
+                : selectedCount > 0
+                  ? `Copy (${selectedCount})`
+                  : "Copy"}
+            </Button>
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={handleExport}
+              disabled={loading || items.length === 0}
+            >
+              <Download className="h-4 w-4" strokeWidth={2} />
+              {selectedCount > 0 ? `Export .md (${selectedCount})` : "Export .md"}
+            </Button>
+          </div>
+          {copyError && (
+            <p className="text-caption text-warning-red">
+              Couldn&apos;t copy — try the .md download instead.
+            </p>
+          )}
+        </div>
       </div>
 
       {/* Filter toggle + counts */}
