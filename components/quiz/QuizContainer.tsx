@@ -192,7 +192,7 @@ export default function QuizContainer() {
 				<button
 					onClick={() => window.location.reload()}
 					type="button"
-					className="rounded-buttons bg-neon-lime px-4 py-2 text-pitch-black transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_10px_30px_-8px_rgba(228,242,34,0.55)]"
+					className="rounded-buttons bg-neon-lime px-4 py-2 text-pitch-black shadow-[inset_0_2.5px_0_-2px_rgba(255,255,255,0.4)] transition-all duration-200 hover:-translate-y-0.5 hover:brightness-[1.05]"
 				>
 					Retry
 				</button>
@@ -325,7 +325,7 @@ export default function QuizContainer() {
 							onClick={handleConfirmAnswer}
 							type="button"
 							disabled={isSubmitting || isValidating}
-							className="flex-1 px-6 py-3.5 rounded-buttons bg-neon-lime text-pitch-black font-w590 transition-all duration-200 ease-out hover:-translate-y-0.5 hover:shadow-[0_0_0_1px_rgba(228,242,34,0.35),0_10px_30px_-8px_rgba(228,242,34,0.55)] focus:outline-none focus-visible:ring-2 focus-visible:ring-neon-lime focus-visible:ring-offset-2 focus-visible:ring-offset-pitch-black disabled:pointer-events-none disabled:opacity-50"
+							className="flex-1 px-6 py-3.5 rounded-buttons bg-neon-lime text-pitch-black font-w590 transition-all duration-200 ease-out shadow-[inset_0_2.5px_0_-2px_rgba(255,255,255,0.4)] hover:-translate-y-0.5 hover:brightness-[1.05] focus:outline-none focus-visible:ring-2 focus-visible:ring-neon-lime focus-visible:ring-offset-2 focus-visible:ring-offset-pitch-black disabled:pointer-events-none disabled:opacity-50"
 							aria-label="Submit answer"
 						>
 							{isSubmitting || isValidating ? "Validating…" : "Submit Answer"}
@@ -336,7 +336,7 @@ export default function QuizContainer() {
 						<button
 							onClick={nextQuestion}
 							type="button"
-							className="flex-1 px-6 py-3.5 rounded-buttons bg-neon-lime text-pitch-black font-w590 transition-all duration-200 ease-out hover:-translate-y-0.5 hover:shadow-[0_0_0_1px_rgba(228,242,34,0.35),0_10px_30px_-8px_rgba(228,242,34,0.55)] focus:outline-none focus-visible:ring-2 focus-visible:ring-neon-lime focus-visible:ring-offset-2 focus-visible:ring-offset-pitch-black disabled:pointer-events-none disabled:opacity-50"
+							className="flex-1 px-6 py-3.5 rounded-buttons bg-neon-lime text-pitch-black font-w590 transition-all duration-200 ease-out shadow-[inset_0_2.5px_0_-2px_rgba(255,255,255,0.4)] hover:-translate-y-0.5 hover:brightness-[1.05] focus:outline-none focus-visible:ring-2 focus-visible:ring-neon-lime focus-visible:ring-offset-2 focus-visible:ring-offset-pitch-black disabled:pointer-events-none disabled:opacity-50"
 							aria-label="Next question"
 							disabled={isSubmitting || isValidating}
 						>
@@ -348,7 +348,7 @@ export default function QuizContainer() {
 						<button
 							onClick={() => router.push("/quiz/results")}
 							type="button"
-							className="flex-1 px-6 py-3.5 rounded-buttons bg-neon-lime text-pitch-black font-w590 transition-all duration-200 ease-out hover:-translate-y-0.5 hover:shadow-[0_0_0_1px_rgba(228,242,34,0.35),0_10px_30px_-8px_rgba(228,242,34,0.55)] focus:outline-none focus-visible:ring-2 focus-visible:ring-neon-lime focus-visible:ring-offset-2 focus-visible:ring-offset-pitch-black disabled:pointer-events-none disabled:opacity-50"
+							className="flex-1 px-6 py-3.5 rounded-buttons bg-neon-lime text-pitch-black font-w590 transition-all duration-200 ease-out shadow-[inset_0_2.5px_0_-2px_rgba(255,255,255,0.4)] hover:-translate-y-0.5 hover:brightness-[1.05] focus:outline-none focus-visible:ring-2 focus-visible:ring-neon-lime focus-visible:ring-offset-2 focus-visible:ring-offset-pitch-black disabled:pointer-events-none disabled:opacity-50"
 							aria-label="View results"
 						>
 							View Results

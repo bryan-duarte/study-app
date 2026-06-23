@@ -41,15 +41,22 @@ function computeStreak(dateStrings: string[]): number {
   return streak;
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    const certificationId = new URL(request.url).searchParams.get(
+      "certification_id",
+    );
     const userId = await resolveUserId();
     const supabase = createSupabaseClient();
 
-    // All questions with their tags (312 rows) — the denominator for coverage.
-    const { data: questions, error: qError } = await supabase
-      .from("questions")
-      .select("id, domain, topic");
+    // All questions for the active certification — the denominator for coverage.
+    // Optional + backward-compatible: when omitted, every question counts (all
+    // rows are backfilled to a certification today).
+    let questionsQuery = supabase.from("questions").select("id, domain, topic");
+    if (certificationId) {
+      questionsQuery = questionsQuery.eq("certification_id", certificationId);
+    }
+    const { data: questions, error: qError } = await questionsQuery;
     if (qError) throw qError;
     const totalQuestions = questions?.length ?? 0;
 

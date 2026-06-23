@@ -7,7 +7,7 @@
  * DEFAULT_EXPORT_OPTIONS for the defaults, which preserve the pre-customization
  * output byte-for-byte.
  */
-import type { HistoryItem } from "@/types/quiz";
+import type { Certification, HistoryItem } from "@/types/quiz";
 
 function correctOptions(item: HistoryItem) {
   return item.options.filter((o) => o.isCorrect);
@@ -70,15 +70,34 @@ export const DEFAULT_EXPORT_OPTIONS: Required<MarkdownExportOptions> = {
   questionId: false,
 };
 
-/** Render a list of history items as one Markdown string. The question text is always included. */
+/** Default export title — preserves the pre-certification output byte-for-byte. */
+export const DEFAULT_EXPORT_TITLE = "AWS SAA-C03 — Study Export";
+
+/**
+ * Export heading for a certification, e.g. "AWS SAA-C03 — Study Export".
+ * Falls back to the cert name, then to the default title when no cert is active.
+ * For the seeded SAA-C03 row this reproduces DEFAULT_EXPORT_TITLE exactly.
+ */
+export function certificationExportTitle(cert: Certification | null): string {
+  if (!cert) return DEFAULT_EXPORT_TITLE;
+  const code = [cert.provider, cert.examCode].filter(Boolean).join(" ");
+  return `${code || cert.name} — Study Export`;
+}
+
+/**
+ * Render a list of history items as one Markdown string. The question text is
+ * always included. `title` defaults to the SAA-C03 header; callers pass the
+ * active certification's label so the export reflects the current cert.
+ */
 export function historyToMarkdown(
   items: HistoryItem[],
   userOptions: MarkdownExportOptions = {},
+  title: string = DEFAULT_EXPORT_TITLE,
 ): string {
   const opts = { ...DEFAULT_EXPORT_OPTIONS, ...userOptions };
   const today = new Date().toISOString().slice(0, 10);
   const out: string[] = [
-    "# AWS SAA-C03 — Study Export",
+    `# ${title}`,
     "",
     `> ${items.length} question${items.length === 1 ? "" : "s"} · exported ${today}`,
     "",

@@ -1,7 +1,5 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { Home } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { useQuizStore } from "@/store/quizStore";
 import MistakesList from "./MistakesList";
@@ -23,7 +21,6 @@ export default function ResultsScreen() {
 		answeredQuestionIds,
 	} = useQuizStore();
 
-	const router = useRouter();
 	const sessionMetrics = session.sessionMetrics;
 	const currentSessionData = session.currentSessionData;
 
@@ -110,11 +107,7 @@ export default function ResultsScreen() {
 	return (
 		<div className="mx-auto flex max-w-3xl flex-col gap-6 px-4 py-10 md:px-6">
 			{/* Session Summary Card */}
-			<div className="animate-fade-in-up relative overflow-hidden rounded-cards border border-charcoal-grey/70 bg-graphite/80 p-6 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.03),0_12px_32px_-16px_rgba(0,0,0,0.7)] backdrop-blur-sm sm:p-8">
-				<div
-					aria-hidden
-					className="pointer-events-none absolute -top-24 left-1/2 h-56 w-56 -translate-x-1/2 rounded-full bg-neon-lime/[0.08] blur-3xl"
-				/>
+			<div className="animate-fade-in-up relative overflow-hidden rounded-cards border border-charcoal-grey/70 bg-graphite/80 p-6 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] backdrop-blur-sm sm:p-8">
 
 				<div className="relative">
 					<p className="mb-3 text-caption font-w510 uppercase tracking-[0.16em] text-fog-grey">
@@ -125,7 +118,7 @@ export default function ResultsScreen() {
 					</h1>
 
 					<div className="animate-scale-in mb-2 inline-flex items-baseline gap-1">
-						<span className="text-[clamp(3.5rem,12vw,5.5rem)] font-w590 leading-none text-neon-lime drop-shadow-[0_0_24px_rgba(228,242,34,0.35)]">
+						<span className="text-[clamp(3.5rem,12vw,5.5rem)] font-light leading-none text-neon-lime">
 							{percentage}
 						</span>
 						<span className="text-2xl font-w510 text-neon-lime/70">%</span>
@@ -167,10 +160,6 @@ export default function ResultsScreen() {
 								Review Mistakes
 							</Button>
 						)}
-						<Button onClick={() => router.push("/")} variant="secondary">
-							<Home className="h-4 w-4" strokeWidth={2} />
-							Back to Home
-						</Button>
 					</div>
 				</div>
 			</div>

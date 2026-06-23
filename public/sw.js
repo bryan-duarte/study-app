@@ -4,10 +4,14 @@
 // Strategy:
 //   - Page navigations: network-first (fresh quiz shell/data), cache fallback when offline.
 //   - Same-origin static assets (/_next/static, icons): cache-first for instant loads.
-//   - Live data (Supabase + the app's own /api routes): bypassed (NetworkOnly).
+//   - Live data (Supabase + the app's own /api routes): bypassed (NetworkOnly) so
+//     /api/quiz/stats and friends are ALWAYS live — never served stale on mobile.
 //
-// Bump VERSION on any meaningful change; the activate handler purges old caches.
-const VERSION = "v1";
+// Bump VERSION on any meaningful change; the activate handler purges old caches
+// and skipWaiting()/clients.claim() activate the new SW on installed PWAs.
+//   v2: force installed clients onto this SW so the /api network-only policy
+//       reaches phones where Insights was showing no data (stale-cache fix).
+const VERSION = "v2";
 const CACHE = `aws-quiz-${VERSION}`;
 // The HTML shell + the stable static icon. Hashed /_next assets and per-route
 // pages are populated at runtime by the fetch handler below.

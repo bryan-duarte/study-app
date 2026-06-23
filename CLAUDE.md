@@ -16,15 +16,15 @@ This ensures proper lockfile generation and version resolution.
 
 # Design Guidelines
 
-**CRITICAL:** All UI development MUST follow the Linear design system specified in [`DESIGN.md`](/Users/bryan.duarte/Documents/personal/aws-preparation/DESIGN.md).
+**CRITICAL:** All UI development MUST follow the Twingate design system specified in [`DESIGN.md`](/Users/bryan.duarte/Documents/personal/aws-preparation/DESIGN.md).
 
 Before implementing any UI components, consult the design system for:
 
-- **Colors:** Dark theme palette with Pitch Black (#08090a) canvas, Porcelain (#f7f8f8) primary text, and Neon Lime (#e4f222) for primary actions
+- **Colors:** Dark theme palette with Void Black (#000000) canvas, Paper White (#ffffff) primary text, chartreuse "Live Wire" (#eef35f) for the single primary CTA per screen, and Signal Violet (#b6abff) for inline brand emphasis
 - **Typography:** Inter Variable for UI text, Berkeley Mono for code. Specific weights: 300, 400, 510, 590
 - **Spacing:** 4px base unit, compact density with 8px element gap
 - **Components:** Pre-defined styles for buttons, cards, inputs, badges, and navigation elements
-- **Borders:** 6px default radius for cards and buttons, 2px for tags
+- **Borders:** 12px radius for cards, fully pill (9999px) for buttons and badges, 4px for tags, 8px default
 - **Theme:** Dark mode only — no light theme variants
 
 @AGENTS.md

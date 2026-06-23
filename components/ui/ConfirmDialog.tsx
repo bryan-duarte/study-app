@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { Button } from "./Button";
 
 interface ConfirmDialogProps {
@@ -42,9 +43,16 @@ export function ConfirmDialog({
 		return () => window.removeEventListener("keydown", handleKeyDown);
 	}, [open, onCancel]);
 
-	if (!open) return null;
+	// `typeof document` guards SSR: React's server renderer skips portals, so the
+	// only risk is touching `document.body` before the client has one. No mounted
+	// state needed — the portal commits (attaching cancelRef) before the focus
+	// effect runs, so focus-on-open works even on a first render with open=true.
+	if (!open || typeof document === "undefined") return null;
 
-	return (
+	// Portaled to <body> so the overlay escapes any ancestor stacking context
+	// (e.g. AppShell's `relative z-[1]` wrapper) and its z-50 always paints above
+	// the z-40 mobile BottomNav, on every route — not just the nav-less /quiz.
+	return createPortal(
 		<div
 			className="fixed inset-0 z-50 flex items-center justify-center p-4"
 			role="dialog"
@@ -58,7 +66,7 @@ export function ConfirmDialog({
 				aria-label="Cancel"
 				tabIndex={-1}
 			/>
-			<div className="relative w-full max-w-sm animate-scale-in rounded-cards border border-charcoal-grey/70 bg-graphite p-6 shadow-[0_24px_60px_-20px_rgba(0,0,0,0.8)]">
+			<div className="relative w-full max-w-sm animate-scale-in rounded-cards border border-charcoal-grey/70 bg-graphite p-6 shadow-xl">
 				<h2
 					id="confirm-dialog-title"
 					className="mb-2 text-body font-w590 text-porcelain"
@@ -81,7 +89,7 @@ export function ConfirmDialog({
 						<button
 							type="button"
 							onClick={onConfirm}
-							className="inline-flex h-12 items-center justify-center rounded-buttons bg-warning-red px-5 text-body font-w590 text-porcelain transition-all duration-200 ease-out hover:-translate-y-0.5 hover:shadow-[0_10px_30px_-8px_rgba(255,77,79,0.5)] focus:outline-none focus-visible:ring-2 focus-visible:ring-warning-red focus-visible:ring-offset-2 focus-visible:ring-offset-pitch-black active:scale-[0.97]"
+							className="inline-flex h-12 items-center justify-center rounded-buttons bg-warning-red px-5 text-body font-w510 text-pitch-black shadow-[inset_0_2.5px_0_-2px_rgba(255,255,255,0.25)] transition-all duration-200 ease-out hover:-translate-y-0.5 hover:brightness-[1.05] focus:outline-none focus-visible:ring-2 focus-visible:ring-warning-red focus-visible:ring-offset-2 focus-visible:ring-offset-pitch-black active:scale-[0.97]"
 						>
 							{confirmLabel}
 						</button>
@@ -92,6 +100,7 @@ export function ConfirmDialog({
 					)}
 				</div>
 			</div>
-		</div>
+		</div>,
+		document.body,
 	);
 }

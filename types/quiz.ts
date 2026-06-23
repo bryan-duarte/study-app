@@ -62,6 +62,9 @@ export interface SessionStartRequest {
   domains?: string[];
   /** Category mode: restrict to these topics. */
   topics?: string[];
+  /** Active certification to draw questions from. Optional + backward-compatible:
+   *  when omitted, the question pool is unfiltered (all rows are backfilled today). */
+  certification_id?: string;
 }
 
 /**
@@ -187,6 +190,31 @@ export interface UserQuestionHistory {
 }
 
 // ============================================================================
+// Certifications
+// ============================================================================
+
+/**
+ * A certification a question can belong to (camelCase mirror of the
+ * certifications table). One-to-many: each question links to exactly one cert.
+ */
+export interface Certification {
+  id: string;
+  /** "AWS Solutions Architect – Associate" */
+  name: string;
+  /** "aws-solutions-architect-associate" — stable identity + list key. */
+  slug: string;
+  /** Vendor exam code, e.g. "SAA-C03". */
+  examCode: string | null;
+  /** Issuing provider, e.g. "AWS". */
+  provider: string | null;
+  description: string | null;
+  /** Whether the cert appears in the selector list. */
+  isActive: boolean;
+  /** Ascending display order in the selector. */
+  sortOrder: number;
+}
+
+// ============================================================================
 // Tags
 // ============================================================================
 
@@ -229,6 +257,8 @@ export interface HistoryItem {
   lastAnsweredAt: string | null;
   /** Tags assigned by the user (populated by GET /api/quiz/history). Optional so older/cached responses stay valid. */
   tags?: Tag[];
+  /** Owning certification. Optional so older/cached responses stay valid. */
+  certificationId?: string | null;
 }
 
 /** Summary of a past session (for the replay list). */

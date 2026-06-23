@@ -26,6 +26,7 @@ export async function GET(request: Request) {
   try {
     const url = new URL(request.url);
     const wrongOnly = url.searchParams.get("wrongOnly") === "true";
+    const certificationId = url.searchParams.get("certification_id");
     const tagSlugs = (url.searchParams.get("tags") ?? "")
       .split(",")
       .map((s) => s.trim())
@@ -95,10 +96,19 @@ export async function GET(request: Request) {
       .map((h) => h.question_id);
     if (questionIds.length === 0) return NextResponse.json({ items: [] });
 
-    const { data: questions, error: qError } = await supabase
+    // Optional certification filter: when present, history items whose question
+    // is outside the active cert are skipped below (their question won't be in
+    // `byId`). Backward-compatible: omitted ⇒ all answered questions returned.
+    // The cert column is only referenced when `certificationId` is set, so this
+    // route keeps working before the certifications migration is applied.
+    let questionsQuery = supabase
       .from("questions")
       .select("id, type, title, options, domain, topic, difficulty")
       .in("id", questionIds);
+    if (certificationId) {
+      questionsQuery = questionsQuery.eq("certification_id", certificationId);
+    }
+    const { data: questions, error: qError } = await questionsQuery;
     if (qError) throw qError;
 
     const byId = new Map((questions ?? []).map((q) => [q.id, q]));

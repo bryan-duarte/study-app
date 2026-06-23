@@ -11,11 +11,13 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 	fullWidth?: boolean;
 }
 
+// Elevation follows DESIGN.md: no outer drop shadows. The primary pill gets an
+// inset top "beveled-LED" highlight; outlined variants get a hairline inset.
 const variantStyles: Record<ButtonVariant, string> = {
 	primary:
-		"bg-neon-lime text-pitch-black font-w590 rounded-buttons hover:-translate-y-0.5 hover:shadow-[0_0_0_1px_rgba(228,242,34,0.35),0_10px_30px_-8px_rgba(228,242,34,0.55)] focus-visible:ring-2 focus-visible:ring-neon-lime focus-visible:ring-offset-2 focus-visible:ring-offset-pitch-black",
+		"bg-neon-lime text-pitch-black font-w510 rounded-buttons shadow-[inset_0_2.5px_0_-2px_rgba(255,255,255,0.35)] hover:brightness-[1.07] focus-visible:ring-2 focus-visible:ring-neon-lime focus-visible:ring-offset-2 focus-visible:ring-offset-pitch-black",
 	secondary:
-		"bg-transparent text-porcelain border border-charcoal-grey rounded-buttons hover:bg-deep-slate hover:border-muted-ash hover:-translate-y-0.5 focus-visible:ring-2 focus-visible:ring-storm-cloud",
+		"bg-transparent text-porcelain border border-muted-ash rounded-buttons shadow-[inset_0_0_0_0.5px_rgba(255,255,255,0.08)] hover:bg-deep-slate hover:border-gunmetal focus-visible:ring-2 focus-visible:ring-storm-cloud",
 	ghost:
 		"bg-transparent text-light-steel rounded-buttons hover:bg-deep-slate hover:text-porcelain focus-visible:ring-2 focus-visible:ring-storm-cloud",
 	navigation:
@@ -23,9 +25,9 @@ const variantStyles: Record<ButtonVariant, string> = {
 };
 
 const sizeStyles: Record<ButtonSize, string> = {
-	sm: "h-10 px-4 text-sm",
-	md: "h-12 px-5 text-body",
-	lg: "h-14 px-6 text-body",
+	sm: "h-10 px-5 text-sm",
+	md: "h-12 px-6 text-body",
+	lg: "h-14 px-7 text-body",
 };
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(

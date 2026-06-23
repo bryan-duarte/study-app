@@ -1,27 +1,31 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Check } from "lucide-react";
+import { Hash } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import { useQuizStore } from "@/store/quizStore";
 
 const STORAGE_KEY = "quiz-question-count";
 const QUESTION_COUNTS = [10, 20, 30];
-const DEFAULT_COUNT = 20;
 
+/**
+ * Compact, label-less session-size control. The descriptive copy ("Questions
+ * per session…") is intentionally dropped — a leading hash glyph carries the
+ * meaning, and the value applies to every study mode launched below it.
+ *
+ * Single source of truth: the Zustand `selectedQuestionCount` + the
+ * `quiz-question-count` localStorage key that the modes read at launch.
+ */
 export default function QuestionCountSelector() {
 	const selectedCount = useQuizStore((state) => state.selectedQuestionCount);
 	const setQuestionCount = useQuizStore((state) => state.setQuestionCount);
 	const [mounted, setMounted] = useState(false);
 
-	// Load from localStorage on mount
 	useEffect(() => {
 		const stored = localStorage.getItem(STORAGE_KEY);
 		if (stored) {
 			const count = parseInt(stored, 10);
-			if (QUESTION_COUNTS.includes(count)) {
-				setQuestionCount(count);
-			}
+			if (QUESTION_COUNTS.includes(count)) setQuestionCount(count);
 		}
 		setMounted(true);
 	}, [setQuestionCount]);
@@ -31,48 +35,34 @@ export default function QuestionCountSelector() {
 		localStorage.setItem(STORAGE_KEY, count.toString());
 	};
 
-	// Full-width segmented control on mobile, auto-width inline on >=sm
-	const containerClasses =
-		"flex w-full items-center gap-1 rounded-buttons border border-charcoal-grey bg-deep-slate/60 p-1 backdrop-blur-sm sm:inline-flex sm:w-auto";
-	const buttonClasses = (isSelected: boolean) =>
-		cn(
-			"inline-flex h-11 flex-1 select-none items-center justify-center gap-1.5 rounded-badges px-3 text-body font-w590 transition-all duration-200 ease-out focus:outline-none focus-visible:ring-2 focus-visible:ring-neon-lime focus-visible:ring-offset-2 focus-visible:ring-offset-pitch-black sm:flex-none sm:min-w-[68px] sm:px-5",
-			isSelected
-				? "bg-neon-lime text-pitch-black shadow-[0_4px_14px_-4px_rgba(228,242,34,0.5)]"
-				: "text-storm-cloud hover:bg-gunmetal/60 hover:text-porcelain",
-		);
-
-	// Don't render until mounted to avoid hydration mismatch
-	if (!mounted) {
-		return (
-			<div className={containerClasses}>
-				{QUESTION_COUNTS.map((count) => (
-					<button
-						key={count}
-						disabled
-						className="inline-flex h-11 flex-1 items-center justify-center rounded-badges px-3 text-body font-w590 text-fog-grey sm:flex-none sm:min-w-[68px] sm:px-5"
-					>
-						{count}
-					</button>
-				))}
-			</div>
-		);
-	}
-
 	return (
-		<div className={containerClasses}>
+		<div
+			role="radiogroup"
+			aria-label="Questions per session"
+			className="inline-flex items-center gap-1 rounded-pill border border-charcoal-grey bg-deep-slate/60 p-1 pl-2.5 backdrop-blur-sm"
+		>
+			<Hash
+				className="mr-0.5 h-3.5 w-3.5 flex-shrink-0 text-storm-cloud"
+				strokeWidth={2.5}
+				aria-hidden
+			/>
 			{QUESTION_COUNTS.map((count) => {
-				const isSelected = count === selectedCount;
+				const isSelected = mounted && count === selectedCount;
 				return (
 					<button
 						key={count}
-						onClick={() => handleSelect(count)}
 						type="button"
-						className={buttonClasses(isSelected)}
-						aria-label={`${count} questions`}
-						aria-pressed={isSelected}
+						role="radio"
+						aria-checked={isSelected}
+						aria-label={`${count} questions per session`}
+						onClick={() => handleSelect(count)}
+						className={cn(
+							"flex h-9 min-w-[44px] select-none items-center justify-center rounded-pill px-2.5 text-body font-w590 transition-all duration-200 ease-out focus:outline-none focus-visible:ring-2 focus-visible:ring-neon-lime focus-visible:ring-offset-2 focus-visible:ring-offset-pitch-black",
+							isSelected
+								? "bg-neon-lime text-pitch-black shadow-[inset_0_2.5px_0_-2px_rgba(255,255,255,0.4)]"
+								: "text-storm-cloud hover:text-porcelain active:scale-95",
+						)}
 					>
-						{isSelected && <Check className="h-3.5 w-3.5" strokeWidth={3} />}
 						{count}
 					</button>
 				);
