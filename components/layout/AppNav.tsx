@@ -2,14 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Cloud, Home, Compass, History, BarChart3, Tag } from "lucide-react";
+import { Cloud, House, Telescope, History, TrendingUp, Tags } from "lucide-react";
 
 const LINKS = [
-  { href: "/", label: "Home", icon: Home },
-  { href: "/history", label: "Explorer", icon: Compass },
-  { href: "/tags", label: "Tags", icon: Tag },
+  { href: "/", label: "Home", icon: House },
+  { href: "/history", label: "Explorer", icon: Telescope },
+  { href: "/tags", label: "Tags", icon: Tags },
   { href: "/sessions", label: "Sessions", icon: History },
-  { href: "/insights", label: "Insights", icon: BarChart3 },
+  { href: "/insights", label: "Insights", icon: TrendingUp },
 ];
 
 /**
@@ -28,12 +28,12 @@ export default function AppNav() {
           <span className="flex h-7 w-7 items-center justify-center rounded-cards bg-neon-lime text-pitch-black">
             <Cloud className="h-4 w-4" strokeWidth={2.5} />
           </span>
-          <span className="hidden text-body font-w590 text-porcelain sm:inline">
+          <span className="text-body font-w590 text-porcelain">
             AWS Quiz
           </span>
         </Link>
 
-        <div className="flex items-center gap-1">
+        <div className="hidden items-center gap-1 sm:flex">
           {LINKS.map(({ href, label, icon: Icon }) => {
             const active =
               href === "/" ? pathname === "/" : pathname.startsWith(href);

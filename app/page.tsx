@@ -1,19 +1,9 @@
 "use client";
 
-import Link from "next/link";
-import {
-	Cloud,
-	ListOrdered,
-	History,
-	Compass,
-	ArrowUpRight,
-	Sparkles,
-	AlertTriangle,
-	RefreshCw,
-} from "lucide-react";
-import QuestionCountSelector from "@/components/home/QuestionCountSelector";
+import { Cloud, Sparkles, AlertTriangle, RefreshCw } from "lucide-react";
 import StudyModes from "@/components/home/StudyModes";
 import MasterySummary from "@/components/home/MasterySummary";
+import QuestionCountSelector from "@/components/home/QuestionCountSelector";
 import CertificationSelector from "@/components/certifications/CertificationSelector";
 import { useStats } from "@/lib/client/useStats";
 
@@ -40,28 +30,32 @@ export default function Home() {
 	// A failed fetch must not be mistaken for "no progress yet" — only treat the
 	// user as new when the request actually succeeded with zero answers.
 	const isNewUser = !loading && !error && answered === 0;
+	// A live "signal LED" only pulses when there's actually work waiting today.
+	const hasDue = dueCount > 0;
 
 	return (
-		<div className="relative mx-auto flex w-full max-w-2xl flex-col gap-5 px-4 pt-5 pb-10 sm:gap-6 sm:px-6 sm:pt-8">
-			{/* Subtle top glow for atmosphere (kept contained) */}
-			<div
-				aria-hidden
-				className="pointer-events-none absolute top-[-4%] left-1/2 h-[320px] w-[560px] -translate-x-1/2 rounded-full bg-neon-lime/[0.05] blur-[120px]"
-			/>
-
-			{/* 1. Header strip: brand + focal daily line + certification selector */}
-			<header className="animate-fade-in-up flex flex-col gap-3">
+		<div className="relative mx-auto flex w-full max-w-2xl flex-col gap-5 px-4 pt-6 pb-10 sm:gap-6 sm:px-6 sm:pt-8">
+			{/* 1. Header strip: brand eyebrow + focal daily line + certification */}
+			<header className="animate-fade-in-up relative z-50 flex flex-col gap-4">
 				<div className="flex items-center gap-3">
-					<span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-cards bg-neon-lime text-pitch-black shadow-[0_4px_14px_-4px_rgba(228,242,34,0.5)]">
+					<span className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-cards bg-neon-lime text-pitch-black shadow-[inset_0_2.5px_0_-2px_rgba(255,255,255,0.4)]">
 						<Cloud className="h-5 w-5" strokeWidth={2.5} />
 					</span>
-					<div className="min-w-0">
-						<p className="text-option font-w590 leading-tight text-porcelain">
+					<div className="min-w-0 flex-1">
+						<p className="text-caption font-w590 uppercase tracking-[0.16em] text-storm-cloud">
 							Welcome back
 						</p>
-						<p className="truncate text-caption font-w510 text-storm-cloud">
-							{greetingSub(loading, error, answered, dueCount)}
-						</p>
+						<div className="flex items-center gap-2">
+							{hasDue && (
+								<span className="relative flex h-2 w-2 flex-shrink-0">
+									<span className="absolute inline-flex h-full w-full animate-ping rounded-pill bg-neon-lime opacity-75" />
+									<span className="relative inline-flex h-2 w-2 rounded-pill bg-neon-lime" />
+								</span>
+							)}
+							<p className="min-w-0 truncate text-question font-w590 text-porcelain">
+								{greetingSub(loading, error, answered, dueCount)}
+							</p>
+						</div>
 					</div>
 				</div>
 				<CertificationSelector className="w-full" />
@@ -78,69 +72,20 @@ export default function Home() {
 				)}
 			</div>
 
-			{/* 3. Session size */}
-			<div
-				className="animate-fade-in-up w-full rounded-cards border border-charcoal-grey/70 bg-graphite/50 p-4 backdrop-blur-sm"
-				style={{ animationDelay: "120ms" }}
-			>
-				<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-					<div className="flex items-center gap-3">
-						<span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-cards border border-charcoal-grey bg-deep-slate text-light-steel">
-							<ListOrdered className="h-5 w-5" strokeWidth={2} />
-						</span>
-						<div>
-							<p className="text-body font-w510 text-porcelain">
-								Questions per session
-							</p>
-							<p className="text-caption text-fog-grey">
-								Applies to every mode below
-							</p>
-						</div>
-					</div>
-					<div
-						role="group"
-						aria-label="Question count selection"
-						className="w-full sm:w-auto"
-					>
-						<QuestionCountSelector />
-					</div>
-				</div>
-			</div>
-
-			{/* 4. Study modes */}
-			<div className="animate-fade-in-up" style={{ animationDelay: "160ms" }}>
-				<StudyModes stats={stats} />
-			</div>
-
-			{/* 5. Recent activity glance */}
-			<section
-				className="animate-fade-in-up"
-				style={{ animationDelay: "200ms" }}
-			>
-				<div className="mb-2.5 flex items-center justify-between">
-					<p className="text-caption font-w510 uppercase tracking-[0.14em] text-storm-cloud">
-						Review & explore
+			{/* 3. Practice — section header carries the label; the selector beside it
+			    is label-less (icon + count) and applies to every mode below. */}
+			<section className="flex flex-col gap-3">
+				<div
+					className="animate-fade-in-up flex items-center justify-between gap-3"
+					style={{ animationDelay: "120ms" }}
+				>
+					<p className="text-caption font-w590 uppercase tracking-[0.16em] text-storm-cloud">
+						Practice
 					</p>
-					<Link
-						href="/insights"
-						className="inline-flex items-center gap-1 text-caption font-w510 text-storm-cloud transition-colors hover:text-neon-lime"
-					>
-						Insights <ArrowUpRight className="h-3.5 w-3.5" strokeWidth={2} />
-					</Link>
+					<QuestionCountSelector />
 				</div>
-				<div className="grid grid-cols-2 gap-2.5">
-					<GlanceLink
-						href="/sessions"
-						icon={History}
-						label="Past sessions"
-						sub="Review & replay"
-					/>
-					<GlanceLink
-						href="/history"
-						icon={Compass}
-						label="Explorer"
-						sub="Browse & export"
-					/>
+				<div className="animate-fade-in-up" style={{ animationDelay: "150ms" }}>
+					<StudyModes stats={stats} />
 				</div>
 			</section>
 		</div>
@@ -191,34 +136,5 @@ function StatsErrorCard({ onRetry }: { onRetry: () => void }) {
 				</button>
 			</div>
 		</div>
-	);
-}
-
-function GlanceLink({
-	href,
-	icon: Icon,
-	label,
-	sub,
-}: {
-	href: string;
-	icon: typeof History;
-	label: string;
-	sub: string;
-}) {
-	return (
-		<Link
-			href={href}
-			className="group flex items-center gap-3 rounded-cards border border-charcoal-grey/70 bg-graphite/50 p-3.5 backdrop-blur-sm transition-all hover:-translate-y-0.5 hover:border-muted-ash"
-		>
-			<span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-cards border border-charcoal-grey bg-deep-slate text-light-steel transition-colors group-hover:text-neon-lime">
-				<Icon className="h-5 w-5" strokeWidth={2} />
-			</span>
-			<span className="min-w-0">
-				<span className="block truncate text-body font-w510 text-porcelain">
-					{label}
-				</span>
-				<span className="block truncate text-caption text-fog-grey">{sub}</span>
-			</span>
-		</Link>
 	);
 }

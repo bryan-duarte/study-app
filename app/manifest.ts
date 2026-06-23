@@ -15,8 +15,8 @@ export default function manifest(): MetadataRoute.Manifest {
 		display: "standalone",
 		display_override: ["standalone"],
 		orientation: "portrait",
-		background_color: "#08090a",
-		theme_color: "#08090a",
+		background_color: "#000000",
+		theme_color: "#000000",
 		categories: ["education", "productivity"],
 		icons: [
 			// PNGs are required by iOS and Chrome's installability audit. SVG is

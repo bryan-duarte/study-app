@@ -7,11 +7,13 @@ interface CardProps extends HTMLAttributes<HTMLDivElement> {
 	padding?: "none" | "sm" | "md" | "lg";
 }
 
+// Surfaces are distinguished by tonal stacking + an inset hairline highlight,
+// never by outer drop shadows (DESIGN.md elevation rule).
 const variantStyles: Record<NonNullable<CardProps["variant"]>, string> = {
 	default:
-		"bg-graphite rounded-cards border border-charcoal-grey/70 shadow-[inset_0_1px_0_rgba(255,255,255,0.03),0_2px_4px_rgba(0,0,0,0.4)]",
+		"bg-graphite rounded-cards border border-charcoal-grey/70 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]",
 	elevated:
-		"bg-deep-slate rounded-t-xl border border-charcoal-grey/60 shadow-[inset_0_1px_0_rgba(255,255,255,0.04),0_12px_32px_-16px_rgba(0,0,0,0.7)]",
+		"bg-deep-slate rounded-t-xl border border-charcoal-grey/60 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]",
 	nested: "bg-pitch-black rounded-cards border border-charcoal-grey/50",
 };
 
@@ -61,7 +63,7 @@ export const CardBody = forwardRef<
 >(({ className = "", ...props }, ref) => (
 	<div
 		ref={ref}
-		className={`text-body font-regular text-storm-cloud ${className}`}
+		className={`text-body font-regular text-light-steel ${className}`}
 		{...props}
 	/>
 ));

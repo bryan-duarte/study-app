@@ -59,7 +59,7 @@ export default function StudyModes({ stats }: StudyModesProps) {
         type="button"
         onClick={() => launch("standard")}
         data-testid="mode-standard"
-        className="group flex w-full items-center gap-3.5 rounded-cards bg-neon-lime px-5 py-4 text-left text-pitch-black transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_12px_36px_-8px_rgba(228,242,34,0.55)] focus:outline-none focus-visible:ring-2 focus-visible:ring-neon-lime focus-visible:ring-offset-2 focus-visible:ring-offset-pitch-black"
+        className="group flex w-full items-center gap-3.5 rounded-cards bg-neon-lime px-5 py-4 text-left text-pitch-black shadow-[inset_0_2.5px_0_-2px_rgba(255,255,255,0.35)] transition-all duration-200 hover:-translate-y-0.5 hover:brightness-[1.05] focus:outline-none focus-visible:ring-2 focus-visible:ring-neon-lime focus-visible:ring-offset-2 focus-visible:ring-offset-pitch-black"
       >
         <span className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-cards bg-pitch-black/10">
           <Zap className="h-5 w-5 fill-current" strokeWidth={2} />
@@ -73,8 +73,9 @@ export default function StudyModes({ stats }: StudyModesProps) {
         <ChevronRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
       </button>
 
-      {/* Secondary modes */}
-      <div className="mt-3 grid grid-cols-1 gap-2.5 sm:grid-cols-3">
+      {/* Secondary modes — bento grid: the "By Category" disclosure spans the
+          full width, the two count-badge modes share the row beneath it. */}
+      <div className="mt-2.5 grid grid-cols-2 gap-2.5">
         <ModeCard
           testId="mode-category"
           icon={Layers}
@@ -82,6 +83,7 @@ export default function StudyModes({ stats }: StudyModesProps) {
           sub="Pick domains & topics"
           active={showCategory}
           onClick={() => setShowCategory((v) => !v)}
+          className="col-span-2"
         />
         <ModeCard
           testId="mode-mistakes"
@@ -173,6 +175,7 @@ function ModeCard({
   badge,
   badgeTone,
   testId,
+  className,
 }: {
   icon: typeof Layers;
   label: string;
@@ -183,6 +186,7 @@ function ModeCard({
   badge?: number;
   badgeTone?: "error" | "lime";
   testId?: string;
+  className?: string;
 }) {
   return (
     <button
@@ -194,7 +198,7 @@ function ModeCard({
         active
           ? "border-neon-lime/40 bg-deep-slate"
           : "border-charcoal-grey/70 bg-graphite/50 hover:-translate-y-0.5 hover:border-muted-ash"
-      } ${disabled ? "cursor-not-allowed opacity-45" : ""}`}
+      } ${disabled ? "cursor-not-allowed opacity-45" : ""} ${className ?? ""}`}
     >
       <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-cards border border-charcoal-grey bg-deep-slate text-light-steel transition-colors group-hover:text-neon-lime">
         <Icon className="h-5 w-5" strokeWidth={2} />

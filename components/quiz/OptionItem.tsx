@@ -38,7 +38,7 @@ export default function OptionItem({
 					? "border-emerald/60 border-dashed bg-emerald/[0.06]"
 					: "border-charcoal-grey bg-deep-slate/60 opacity-50"
 		: isSelected
-			? "border-neon-lime bg-neon-lime/[0.08] shadow-[0_0_0_1px_rgba(228,242,34,0.2),0_8px_24px_-12px_rgba(228,242,34,0.4)]"
+			? "border-neon-lime bg-neon-lime/[0.08] shadow-[inset_0_0_0_1px_rgba(228,242,34,0.25)]"
 			: "border-charcoal-grey bg-deep-slate/60 hover:-translate-y-0.5 hover:border-muted-ash hover:bg-gunmetal/50";
 
 	const disabledClasses = disabled ? "cursor-not-allowed" : "cursor-pointer";

@@ -7,9 +7,9 @@
 }
 
 .prose p {
-  @apply text-body text-porcelain;
+  @apply text-body text-light-steel;
   margin-bottom: 1em;
-  line-height: 1.6;
+  line-height: 1.7;
 }
 
 .prose h1,
@@ -27,17 +27,18 @@
 }
 
 .prose code {
-  @apply text-body text-porcelain bg-deep-slate px-1 py-0.5 rounded;
+  @apply text-body text-porcelain bg-deep-slate px-1.5 py-0.5;
+  border-radius: var(--radius-inputs);
   font-family: var(--font-berkeley-mono);
 }
 
 .prose a {
-  @apply text-cyan-spark underline;
+  @apply text-signal-violet underline decoration-signal-violet/40 underline-offset-2;
 }
 
 .prose ul,
 .prose ol {
-  @apply text-body text-porcelain;
+  @apply text-body text-light-steel;
   margin-left: 1.5em;
   margin-bottom: 1em;
 }
@@ -47,7 +48,7 @@
 }
 
 .prose blockquote {
-  @apply text-body text-light-steel border-l-2 border-charcoal-grey pl-4 py-2;
+  @apply text-body text-storm-cloud border-l-2 border-muted-ash pl-4 py-2;
   margin: 1em 0;
 }
 
@@ -61,53 +62,81 @@
 }
 
 @theme {
-  /* Linear Colors */
-  --color-pitch-black: #08090a;
-  --color-graphite: #0f1011;
-  --color-deep-slate: #161718;
-  --color-charcoal-grey: #23252a;
-  --color-muted-ash: #323334;
-  --color-gunmetal: #383b3f;
-  --color-porcelain: #f7f8f8;
-  --color-light-steel: #d0d6e0;
-  --color-storm-cloud: #8a8f98;
-  --color-fog-grey: #62666d;
+  /* ── Surfaces — Twingate tonal stack (void → obsidian → carbon → graphite) ──
+     Depth is communicated by stacking these dark tones, NOT by drop shadows.
+     Legacy names are kept so existing utilities keep resolving; their VALUES
+     now point at the new DESIGN.md palette. */
+  --color-pitch-black: #000000;     /* Void Black — page canvas, full-bleed */
+  --color-graphite: #0e0f11;        /* Obsidian — primary card/panel surface */
+  --color-deep-slate: #141617;      /* Carbon — nested containers, inputs, hover */
+  --color-charcoal-grey: #23252a;   /* hairline border / divider on the canvas */
+  --color-muted-ash: #303438;       /* Ash — stronger hairline border */
+  --color-gunmetal: #3a3d40;        /* Steel — strongest border, chip resting fill */
+
+  /* ── Text ── */
+  --color-porcelain: #f7f8f8;       /* primary headings, high-emphasis text */
+  --color-light-steel: #cfcfd3;     /* Silver — body copy default */
+  --color-storm-cloud: #a1a1aa;     /* Cloud — secondary text, icon strokes */
+  --color-fog-grey: #61626b;        /* Fog — muted helper text, metadata */
   --color-alabaster: #e5e5e6;
-  --color-neon-lime: #e4f222;
-  --color-aether-blue: #5e6ad2;
-  --color-forest-green: #008d2c;
-  --color-cyan-spark: #02b8cc;
-  --color-emerald: #27a644;
-  --color-warning-red: #eb5757;
-  --color-deep-violet: #6366f1;
-  --color-amethyst: #8b5cf6;
+
+  /* ── Accents — strict three-color logic ──
+     live-wire = single primary action + one headline emphasis word
+     signal-violet = inline brand warmth / emphasis
+     circuit-teal = illustrative/diagrammatic only (never a button or text color) */
+  --color-neon-lime: #eef35f;       /* Live Wire — primary CTA accent */
+  --color-aether-blue: #b6abff;     /* Signal Violet — brand emphasis */
+  --color-deep-violet: #b6abff;     /* Signal Violet */
+  --color-amethyst: #9a8cff;        /* deeper violet variant for range */
+  --color-cyan-spark: #00cbaa;      /* Circuit Teal — diagrams/illustration */
+
+  /* ── Functional semantics (quiz correctness — UX, not branding) ── */
+  --color-forest-green: #1f8f4e;
+  --color-emerald: #34d399;         /* correct answer */
+  --color-warning-red: #f2666b;     /* incorrect / error */
+
+  /* ── Canonical DESIGN.md names — use these in freshly-authored markup ── */
+  --color-void-black: #000000;
+  --color-obsidian: #0e0f11;
+  --color-carbon: #141617;
+  --color-slate: #21223a;           /* violet-tinted spotlight/featured surface */
+  --color-ash: #303438;
+  --color-steel: #3a3d40;
+  --color-fog: #61626b;
+  --color-smoke: #8d8d96;
+  --color-cloud: #a1a1aa;
+  --color-silver: #cfcfd3;
+  --color-paper-white: #ffffff;
+  --color-signal-violet: #b6abff;
+  --color-live-wire: #eef35f;
+  --color-circuit-teal: #00cbaa;
 
   /* Typography - Font Families */
   --font-inter-variable: 'Inter Variable', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "IBM Plex Sans", sans-serif;
   --font-berkeley-mono: 'Berkeley Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "IBM Plex Mono", monospace;
 
-  /* Typography - Scale */
-  --text-caption: 10px;
+  /* Typography - Scale (app roles tuned toward DESIGN.md comfortable rhythm) */
+  --text-caption: 11px;
   --leading-caption: 1.4;
-  --tracking-caption: -0.1px;
+  --tracking-caption: 0.1px;
   --text-body: 14px;
-  --leading-body: 1.4;
-  --tracking-body: -0.13px;
+  --leading-body: 1.6;
+  --tracking-body: -0.06px;
   --text-question: 18px;
   --leading-question: 1.5;
   --tracking-question: -0.16px;
   --text-option: 16px;
-  --leading-option: 1.4;
-  --tracking-option: -0.14px;
+  --leading-option: 1.5;
+  --tracking-option: -0.12px;
   --text-heading: 24px;
-  --leading-heading: 1.33;
-  --tracking-heading: -0.22px;
-  --text-heading-lg: 48px;
-  --leading-heading-lg: 1.2;
-  --tracking-heading-lg: -0.22px;
-  --text-display: 72px;
-  --leading-display: 1;
-  --tracking-display: -0.22px;
+  --leading-heading: 1.27;
+  --tracking-heading: -0.4px;
+  --text-heading-lg: 40px;
+  --leading-heading-lg: 1.1;
+  --tracking-heading-lg: -0.9px;
+  --text-display: 64px;
+  --leading-display: 1.05;
+  --tracking-display: -1.4px;
 
   /* Typography - Weights */
   --font-weight-light: 300;
@@ -121,41 +150,40 @@
      conflicts with Tailwind's multiplier (p-4 = 16px). We keep Tailwind's
      default dynamic scale, which the components are written against. */
 
-  /* Border Radius */
+  /* Border Radius — pill buttons & badges are the brand signature */
   --radius-pill: 9999px;
-  --radius-tags: 2px;
-  --radius-cards: 6px;
-  --radius-badges: 4px;
-  --radius-inputs: 6px;
-  --radius-buttons: 6px;
-  --radius-default: 6px;
+  --radius-tags: 4px;
+  --radius-cards: 12px;
+  --radius-badges: 9999px;
+  --radius-inputs: 8px;
+  --radius-buttons: 9999px;
+  --radius-default: 8px;
 
-  /* Shadows */
-  --shadow-sm: rgba(0, 0, 0, 0.4) 0px 2px 4px 0px;
-  --shadow-md: rgba(0, 0, 0, 0.2) 0px 0px 12px 0px inset;
-  --shadow-subtle: rgb(35, 37, 42) 0px 0px 0px 1px inset;
-  --shadow-subtle-2: rgba(0, 0, 0, 0.2) 0px 0px 0px 1px;
-  --shadow-subtle-3: rgba(0, 0, 0, 0.01) 0px 5px 2px 0px, rgba(0, 0, 0, 0.04) 0px 3px 2px 0px, rgba(0, 0, 0, 0.07) 0px 1px 1px 0px, rgba(0, 0, 0, 0.08) 0px 0px 1px 0px;
-  --shadow-xl: rgba(8, 9, 10, 0.6) 0px 4px 32px 0px;
-  --shadow-subtle-4: rgba(0, 0, 0, 0.1) 0px 0px 0px 2px;
-  --shadow-subtle-5: rgba(0, 0, 0, 0.33) 0px 0px 0px 1px;
-  --shadow-subtle-6: rgba(255, 255, 255, 0.03) 0px 0px 0px 1px inset, rgba(255, 255, 255, 0.04) 0px 1px 0px 0px inset, rgba(0, 0, 0, 0.6) 0px 0px 0px 1px, rgba(0, 0, 0, 0.1) 0px 4px 4px 0px;
+  /* Shadows — depth via inset hairline highlights, never outer drop shadows */
+  --shadow-subtle: rgba(255, 255, 255, 0.1) 0px 0px 0px 0.5px inset;
+  --shadow-subtle-2: rgba(255, 255, 255, 0.1) 0px 2.5px 0px -2px inset;
+  --shadow-subtle-3: rgb(58, 61, 64) 0px 0px 0px 0.5px;
+  --shadow-subtle-4: rgb(48, 52, 56) 0px 0px 0px 0.5px;
+  --shadow-subtle-5: rgba(255, 255, 255, 0.15) 0px 2.5px 0px -2px inset, rgba(255, 255, 255, 0.15) 0px 0px 0px 0.5px inset;
+  --shadow-sm: rgba(255, 255, 255, 0.06) 0px 0px 0px 0.5px inset;
+  --shadow-md: rgba(255, 255, 255, 0.08) 0px 0px 0px 0.5px inset;
+  --shadow-xl: rgba(0, 0, 0, 0.6) 0px 24px 60px -28px, rgba(255, 255, 255, 0.06) 0px 0px 0px 0.5px inset;
 
   /* Surfaces */
-  --surface-pitch-black-canvas: #08090a;
-  --surface-graphite-card: #0f1011;
-  --surface-deep-slate-elevated-card: #161718;
+  --surface-pitch-black-canvas: #000000;
+  --surface-graphite-card: #0e0f11;
+  --surface-deep-slate-elevated-card: #141617;
   --surface-charcoal-grey-overlay: #23252a;
 }
 
 :root {
-	--background: #08090a;
+	--background: #000000;
 	--foreground: #f7f8f8;
 }
 
 @media (prefers-color-scheme: dark) {
 	:root {
-		--background: #08090a;
+		--background: #000000;
 		--foreground: #f7f8f8;
 	}
 }
@@ -166,11 +194,6 @@
 
 body {
 	background-color: var(--background);
-	background-image:
-		radial-gradient(900px 480px at 50% -8%, rgba(228, 242, 34, 0.06), transparent 60%),
-		radial-gradient(720px 520px at 100% 0%, rgba(94, 106, 210, 0.07), transparent 55%),
-		radial-gradient(620px 620px at 0% 28%, rgba(99, 102, 241, 0.045), transparent 60%);
-	background-attachment: fixed;
 	color: var(--foreground);
 	font-family: var(--font-inter-variable);
 	-webkit-font-smoothing: antialiased;
@@ -179,17 +202,20 @@ body {
 	min-height: 100vh;
 }
 
-/* Faded dot-grid "control panel" texture, masked toward the top so it never competes with content */
+/* Faint "control panel" dot-grid texture, masked toward the top so it never
+   competes with content. DESIGN.md forbids decorative gradients, so the body
+   itself is a flat void-black canvas — this is a low-contrast instrument-panel
+   texture, not a color wash. */
 body::before {
 	content: "";
 	position: fixed;
 	inset: 0;
 	z-index: 0;
 	pointer-events: none;
-	background-image: radial-gradient(circle, rgba(247, 248, 248, 0.035) 1px, transparent 1px);
-	background-size: 26px 26px;
-	-webkit-mask-image: radial-gradient(ellipse 75% 55% at 50% 0%, #000 25%, transparent 72%);
-	mask-image: radial-gradient(ellipse 75% 55% at 50% 0%, #000 25%, transparent 72%);
+	background-image: radial-gradient(circle, rgba(247, 248, 248, 0.028) 1px, transparent 1px);
+	background-size: 28px 28px;
+	-webkit-mask-image: radial-gradient(ellipse 75% 55% at 50% 0%, #000 20%, transparent 70%);
+	mask-image: radial-gradient(ellipse 75% 55% at 50% 0%, #000 20%, transparent 70%);
 }
 
 /* Page content is lifted above the fixed texture layer by AppShell's wrapper
@@ -276,7 +302,7 @@ body::before {
 
 /* ============================================================
    Motion — CSS-only animation library
-   Tasteful, Linear-grade micro-interactions without a dependency.
+   Tasteful, instrument-panel micro-interactions without a dependency.
    ============================================================ */
 @keyframes fade-in-up {
 	from {

@@ -49,7 +49,7 @@ export const metadata: Metadata = {
 // so the fixed bottom action bar clears the iOS home indicator.
 // themeColor colors the browser/app chrome and the iOS PWA title bar.
 export const viewport: Viewport = {
-	themeColor: "#08090a",
+	themeColor: "#000000",
 	viewportFit: "cover",
 };
 

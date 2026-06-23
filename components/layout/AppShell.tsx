@@ -11,8 +11,9 @@ import BottomNav from "./BottomNav";
  * The bar (and its space reservation) are dropped on /quiz, which runs in focus
  * mode with its own fixed action bar.
  *
- * The reservation (4rem + safe-area) equals the bar's exact height, so there's
- * no clipping and no wasted gap. Removed at `sm` where the bar is hidden.
+ * The reservation (5.5rem + safe-area) clears the floating nav pill: its bottom
+ * offset (~0.875rem) + height (~3.5rem) plus a little breathing room. Removed at
+ * `sm` where the bar is hidden.
  *
  * `relative z-[1]` lifts page content above the fixed dot-grid texture
  * (body::before, z-index 0). This replaces the old global `body > *` rule,
@@ -34,7 +35,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
 				className={cn(
 					"relative z-[1] flex flex-1 flex-col",
 					!hideBottomNav &&
-						"pb-[calc(4rem+env(safe-area-inset-bottom))] sm:pb-0",
+						"pb-[calc(5.5rem+env(safe-area-inset-bottom))] sm:pb-0",
 				)}
 			>
 				{children}
