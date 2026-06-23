@@ -11,7 +11,12 @@
 // and skipWaiting()/clients.claim() activate the new SW on installed PWAs.
 //   v2: force installed clients onto this SW so the /api network-only policy
 //       reaches phones where Insights was showing no data (stale-cache fix).
-const VERSION = "v2";
+//   v3: purge a poisoned CSS chunk — installed PWAs were serving an old
+//       stylesheet (missing the navs' `position:fixed`, with a stale `body > *`
+//       rule), which dropped the bottom nav into normal flow on the long
+//       Explorer/Sessions/Tags lists. Paired with the stale-while-revalidate
+//       fetch policy below so a changed asset at a stable URL self-heals.
+const VERSION = "v3";
 const CACHE = `aws-quiz-${VERSION}`;
 // The HTML shell + the stable static icon. Hashed /_next assets and per-route
 // pages are populated at runtime by the fetch handler below.
@@ -77,24 +82,29 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Same-origin static assets: cache-first (populate on first hit).
+  // Same-origin static assets: stale-while-revalidate. Serve the cached copy
+  // instantly (offline + speed), but ALWAYS refetch in the background and update
+  // the cache. Plain cache-first never self-heals when a stable URL serves new
+  // bytes (e.g. dev /_next chunks), which is how an old CSS chunk got pinned
+  // and broke the fixed bottom nav — see VERSION note above.
   if (url.origin === self.location.origin) {
     event.respondWith(
       // ignoreSearch so cache-busted static URLs (e.g. /favicon.ico?<hash>)
       // still match their precached entry.
       caches.match(request, { ignoreSearch: true }).then((cached) => {
-        return (
-          cached ||
-          fetch(request)
-            .then((response) => {
-              const copy = response.clone();
-              caches.open(CACHE).then((cache) => cache.put(request, copy));
-              return response;
-            })
-            // Uncached + offline: degrade silently with a 504 instead of surfacing
-            // ERR_FAILED (e.g. a cache-busted favicon URL we couldn't precache).
-            .catch(() => new Response("", { status: 504, statusText: "Offline" }))
-        );
+        const network = fetch(request)
+          .then((response) => {
+            const copy = response.clone();
+            caches.open(CACHE).then((cache) => cache.put(request, copy));
+            return response;
+          })
+          // Offline: fall back to cache if we have it, else degrade silently with
+          // a 504 instead of surfacing ERR_FAILED (e.g. a cache-busted favicon
+          // URL we couldn't precache).
+          .catch(() => cached || new Response("", { status: 504, statusText: "Offline" }));
+        // Cache hit → serve instantly, refresh happens in the background.
+        // Cache miss → wait on the network.
+        return cached || network;
       })
     );
   }
