@@ -17,10 +17,11 @@ const TABS = [
 ] as const;
 
 /**
- * Floating mobile tab bar — a glass pill detached from the viewport edges
- * rather than a full-width docked bar. Mobile only (`sm:hidden`); desktop keeps
- * the top AppNav. Visibility per route is owned by AppShell (hidden on /quiz to
- * avoid colliding with the quiz's own fixed action bar).
+ * Floating mobile tab bar — a full-width glass bar that spans the viewport with
+ * a 16px side gutter (`px-4`) and a small bottom gap, rather than a compact
+ * centered pill. Mobile only (`sm:hidden`); desktop keeps the top AppNav.
+ * Visibility per route is owned by AppShell (hidden on /quiz to avoid colliding
+ * with the quiz's own fixed action bar).
  *
  * Interaction model: inactive tabs are icon-only circles; the active tab widens
  * into a pill that reveals its label, so the current location always reads
@@ -37,9 +38,9 @@ export default function BottomNav() {
 	return (
 		<nav
 			aria-label="Primary"
-			className="fixed inset-x-0 bottom-[calc(env(safe-area-inset-bottom)+0.875rem)] z-40 flex justify-center px-4 sm:hidden"
+			className="fixed inset-x-0 bottom-[calc(env(safe-area-inset-bottom)+0.5rem)] z-40 flex justify-center px-4 sm:hidden"
 		>
-			<ul className="flex items-center gap-1 rounded-pill border border-muted-ash/60 bg-graphite/80 p-1.5 shadow-xl backdrop-blur-xl">
+			<ul className="flex w-full items-center justify-between gap-1 rounded-pill border border-muted-ash/60 bg-graphite/80 p-1.5 shadow-xl backdrop-blur-xl">
 				{TABS.map(({ href, label, icon: Icon }) => {
 					const isActive =
 						href === "/" ? pathname === "/" : pathname.startsWith(href);

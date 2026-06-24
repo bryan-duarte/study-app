@@ -11,8 +11,8 @@ import BottomNav from "./BottomNav";
  * The bar (and its space reservation) are dropped on /quiz, which runs in focus
  * mode with its own fixed action bar.
  *
- * The reservation (5.5rem + safe-area) clears the floating nav pill: its bottom
- * offset (~0.875rem) + height (~3.5rem) plus a little breathing room. Removed at
+ * The reservation (5.5rem + safe-area) clears the floating nav bar: its bottom
+ * offset (~0.5rem) + height (~3.5rem) plus a little breathing room. Removed at
  * `sm` where the bar is hidden.
  *
  * `relative z-[1]` lifts page content above the fixed dot-grid texture
